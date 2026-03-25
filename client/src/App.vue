@@ -1,30 +1,42 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+import { onMounted, ref } from 'vue'
+
+const status = ref('Checking backend...')
+const details = ref(null)
+
+async function loadStatus() {
+  try {
+    const response = await fetch('/api/health')
+    const data = await response.json()
+    details.value = data
+    status.value = data.ok
+      ? `Backend connected to ${data.database.client} RDS`
+      : 'Backend is up, but the database connection failed'
+  } catch (error) {
+    status.value = 'Backend is unreachable'
+    details.value = { error: error.message }
+  }
+}
+
+onMounted(loadStatus)
 </script>
 
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
-  </div>
-  <HelloWorld msg="Vite + Vue" />
-</template>
+  <main class="shell">
+    <section class="panel">
+      <p class="eyebrow">FA Consulting</p>
+      <h1>Backend connection status</h1>
+      <p class="summary">
+        The frontend calls <code>/api/health</code>. The backend then checks the MySQL RDS
+        connection and returns the current status.
+      </p>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+      <div class="status">
+        <strong>Status:</strong>
+        <span>{{ status }}</span>
+      </div>
+
+      <pre v-if="details">{{ JSON.stringify(details, null, 2) }}</pre>
+    </section>
+  </main>
+</template>
