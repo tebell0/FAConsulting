@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Sign In — JayXCreatez Productions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+  <style>
+    .signin-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle background radial glow */
+    .signin-page::before {
+      content: '';
+      position: fixed;
+      top: -20%; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,169,126,0.06) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .signin-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--glass);
+      border: 1px solid rgba(200,169,126,0.18);
+      padding: 3rem 3rem 2.6rem;
+      position: relative;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+    }
+    /* Gold top bar */
+    .signin-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--warm), transparent 70%);
+    }
+
+    .signin-logo {
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem; font-weight: 300;
+      color: var(--off-white);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.4rem;
+    }
+    .signin-logo span { color: var(--warm); }
+
+    .signin-eyebrow {
+      font-size: 0.6rem; letter-spacing: 0.28em; text-transform: uppercase;
+      color: rgba(245,240,235,0.3); margin-bottom: 2.4rem;
+    }
+
+    .signin-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem; font-weight: 300;
+      color: var(--off-white); line-height: 1.15;
+      margin: 0 0 0.4rem;
+    }
+    .signin-sub {
+      font-size: 0.75rem; color: rgba(245,240,235,0.35);
+      margin-bottom: 2.4rem; line-height: 1.6;
+    }
+
+    .signin-field {
+      display: flex; flex-direction: column; gap: 0.4rem;
+      margin-bottom: 1.2rem;
+    }
+    .signin-label {
+      font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(245,240,235,0.35);
+    }
+    .signin-input {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--glass-border);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      padding: 0.85rem 1rem;
+      outline: none;
+      transition: border-color 0.25s;
+      width: 100%; box-sizing: border-box;
+    }
+    .signin-input:focus { border-color: rgba(200,169,126,0.45); }
+    .signin-input::placeholder { color: rgba(245,240,235,0.18); }
+
+    /* Error message */
+    .signin-error {
+      display: none;
+      font-size: 0.72rem;
+      color: #e07b7b;
+      border: 1px solid rgba(224,123,123,0.25);
+      background: rgba(224,123,123,0.06);
+      padding: 0.7rem 1rem;
+      margin-bottom: 1.2rem;
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+    }
+    .signin-error.visible { display: block; }
+
+    .signin-btn {
+      display: flex; align-items: center; justify-content: center; gap: 0.9rem;
+      width: 100%;
+      background: var(--warm); color: var(--black);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      border: none; padding: 1.1rem 2rem;
+      cursor: none; margin-top: 0.6rem;
+      transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+      box-shadow: 0 4px 20px rgba(200,169,126,0.2);
+    }
+    .signin-btn:hover {
+      background: #dbbf94;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 36px rgba(200,169,126,0.3);
+    }
+    .signin-btn svg { transition: transform 0.25s; }
+    .signin-btn:hover svg { transform: translateX(3px); }
+
+    .signin-back {
+      display: block; text-align: center; margin-top: 1.6rem;
+      font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(245,240,235,0.25); text-decoration: none;
+      transition: color 0.25s;
+    }
+    .signin-back:hover { color: var(--warm); }
+
+    /* Shake animation on bad login */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-8px); }
+      40%       { transform: translateX(8px); }
+      60%       { transform: translateX(-5px); }
+      80%       { transform: translateX(5px); }
+    }
+    .signin-card.shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+<body>
+  <!-- Custom Cursor -->
+  <div class="cursor">
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+  </div>
+
+  <div class="signin-page">
+    <div class="signin-card" id="signinCard">
+
+      <a href="index.html" class="signin-logo">Jayx<span>Createz</span></a>
+      <div class="signin-eyebrow">Admin Portal</div>
+
+      <h1 class="signin-title">Welcome back,<br><em>Jalen.</em></h1>
+      <p class="signin-sub">Sign in to access the admin dashboard.</p>
+
+      <div class="signin-error" id="signinError">
+        Incorrect username or password. Please try again.
+      </div>
+
+      <form id="signinForm" onsubmit="handleSignIn(event)" novalidate>
+        <div class="signin-field">
+          <label class="signin-label" for="username">Username</label>
+          <input
+            class="signin-input"
+            type="text"
+            id="username"
+            name="username"
+            autocomplete="username"
+            placeholder="Enter your username"
+          />
+        </div>
+        <div class="signin-field">
+          <label class="signin-label" for="password">Password</label>
+          <input
+            class="signin-input"
+            type="password"
+            id="password"
+            name="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <button class="signin-btn" type="submit">
+          Sign In
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 7h12M7 1l6 6-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </form>
+
+      <a href="index.html" class="signin-back">← Back to site</a>
+
+    </div>
+  </div>
+
+  <script>
+    // Cursor
+    const dot  = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function animCursor() {
+      rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
+      dot.style.left  = mx + 'px'; dot.style.top  = my + 'px';
+      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+      requestAnimationFrame(animCursor);
+    })();
+    document.querySelectorAll('a, button, input').forEach(el => {
+      el.addEventListener('mouseenter', () => { ring.style.width = '48px'; ring.style.height = '48px'; ring.style.borderColor = 'rgba(200,169,126,0.8)'; });
+      el.addEventListener('mouseleave', () => { ring.style.width = '32px'; ring.style.height = '32px'; ring.style.borderColor = 'rgba(200,169,126,0.5)'; });
+    });
+
+    // Sign in logic — password may have been updated via Settings
+    const ADMIN_USER = 'JayxCreatez';
+    const ADMIN_PASS = localStorage.getItem('adminPass') || 'password';
+
+    function handleSignIn(e) {
+      e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value;
+      const error = document.getElementById('signinError');
+      const card  = document.getElementById('signinCard');
+
+      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        // Success — brief flash then redirect
+        error.classList.remove('visible');
+        document.querySelector('.signin-btn').textContent = 'Signing in…';
+        sessionStorage.setItem('adminAuth', '1');
+        setTimeout(() => { window.location.href = 'admindash.html'; }, 600);
+      } else {
+        // Failure
+        error.classList.add('visible');
+        card.classList.remove('shake');
+        void card.offsetWidth; // reflow to restart animation
+        card.classList.add('shake');
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+      }
+    }
+
+    // If already authenticated, skip straight to dashboard
+    if (sessionStorage.getItem('adminAuth') === '1') {
+      window.location.href = 'admindash.html';
+    }
+  </script>
+</body>
+</html>
