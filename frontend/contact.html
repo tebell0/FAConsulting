@@ -168,10 +168,50 @@
       <li><a href="gallery.html">Gallery</a></li>
       <li><a href="calendar.html">Book</a></li>
       <li><a href="index.html#about">About</a></li>
-      <li><a href="ContactMe.html">Contact</a></li>
+      <li><a href="contact.html">Contact</a></li>
     </ul>
     <a href="calendar.html" class="nav-cta">Book a Session</a>
   </nav>
+
+  <!-- Confirmation Popup -->
+  <div id="confirmBackdrop" style="
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,0.75); backdrop-filter:blur(6px);
+    align-items:center; justify-content:center;
+  ">
+    <div style="
+      background:#0f0e0c; border:1px solid rgba(200,169,126,0.3);
+      padding:3rem 3.5rem; max-width:480px; width:90%; position:relative;
+      text-align:center;
+    ">
+      <!-- gold top accent bar -->
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--warm),transparent 60%);"></div>
+      <!-- checkmark icon -->
+      <div style="
+        width:52px; height:52px; border-radius:50%;
+        border:1px solid rgba(200,169,126,0.4);
+        display:flex; align-items:center; justify-content:center;
+        margin:0 auto 1.6rem;
+      ">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10l4.5 4.5L16 6" stroke="var(--warm)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div style="font-size:0.62rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--warm);margin-bottom:0.8rem;">Message Sent</div>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:300;color:var(--off-white);margin:0 0 0.8rem;">We'll Be In Touch</h2>
+      <p style="font-family:'DM Sans',sans-serif;font-size:0.85rem;color:rgba(245,240,235,0.5);line-height:1.7;margin:0 0 2rem;" id="confirmSummary"></p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <a href="index.html" class="btn-primary" style="font-size:0.75rem;">
+          Back to Home
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M7 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </a>
+        <a href="calendar.html" class="btn-secondary" style="font-size:0.75rem;">
+          Book a Session
+          <svg width="14" height="10" viewBox="0 0 16 12" fill="none"><path d="M1 6h14M9 1l5 5-5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <!-- contact section -->
   <section class="contact-section">
@@ -311,9 +351,15 @@
     <div class="footer-bottom">
       <span class="footer-copy">© 2026 JayxCreatez Productions. All rights reserved.</span>
       <div class="footer-socials">
-        <a href="#" class="social-link">IG</a>
-        <a href="#" class="social-link">FB</a>
-        <a href="#" class="social-link">TK</a>
+        <a href="https://www.instagram.com/jayxcreatez?igsh=MXY4cHhzM2kzdzlkaA%3D%3D" target="_blank" class="social-link" rel="noopener">
+          <img src="ig-icon-no-bg.png" alt="Instagram" />
+        </a>
+        <a href="#" class="social-link">
+          <img src="fb-icon-no-bg.png" alt="Facebook" />
+        </a>
+        <a href="#" class="social-link">
+          <img src="x-icon-no-bg.png" alt="X / TikTok" />
+        </a>
       </div>
     </div>
   </footer>
@@ -364,71 +410,93 @@
     // contact form validation
     const form = document.getElementById("contactForm");
 
+    // Inquiry type → dashboard tag mapping
+    const inquiryTagMap = {
+      reschedule: { label: 'Reschedule',      cls: 'msg-tag--reschedule' },
+      billing:    { label: 'Billing',          cls: 'msg-tag--billing'    },
+      additional: { label: 'Additional Info',  cls: 'msg-tag--info'       },
+      location:   { label: 'Location Change',  cls: 'msg-tag--location'   },
+      delivery:   { label: 'Delivery',         cls: 'msg-tag--delivery'   },
+      other:      { label: 'Other',            cls: 'msg-tag--other'      },
+    };
+
     form.addEventListener("submit", function (event) {
+      event.preventDefault();
       let isValid = true;
       clearErrors();
 
       const firstName = document.getElementById("first_name").value.trim();
-      const lastName = document.getElementById("last_name").value.trim();
-      const dob = document.getElementById("dob").value.trim();
-      const phone = document.getElementById("phone").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const inquiry = document.getElementById("inquiry_type").value;
-      const message = document.getElementById("message").value.trim();
+      const lastName  = document.getElementById("last_name").value.trim();
+      const dob       = document.getElementById("dob").value.trim();
+      const phone     = document.getElementById("phone").value.trim();
+      const email     = document.getElementById("email").value.trim();
+      const inquiry   = document.getElementById("inquiry_type").value;
+      const message   = document.getElementById("message").value.trim();
 
-      if (firstName === "") {
-        document.getElementById("firstNameError").textContent = "First name is required.";
-        isValid = false;
-      }
-
-      if (lastName === "") {
-        document.getElementById("lastNameError").textContent = "Last name is required.";
-        isValid = false;
-      }
+      if (firstName === "") { document.getElementById("firstNameError").textContent = "First name is required."; isValid = false; }
+      if (lastName  === "") { document.getElementById("lastNameError").textContent  = "Last name is required.";  isValid = false; }
 
       const dobPattern = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
-      if (dob === "") {
-        document.getElementById("dobError").textContent = "DOB is required.";
-        isValid = false;
-      } else if (!dobPattern.test(dob)) {
-        document.getElementById("dobError").textContent = "Use MM/DD/YYYY format.";
-        isValid = false;
-      }
+      if (dob === "")               { document.getElementById("dobError").textContent = "DOB is required.";         isValid = false; }
+      else if (!dobPattern.test(dob)) { document.getElementById("dobError").textContent = "Use MM/DD/YYYY format."; isValid = false; }
 
       const phonePattern = /^\d{3}-\d{3}-\d{4}$/;
-      if (phone === "") {
-        document.getElementById("phoneError").textContent = "Phone is required.";
-        isValid = false;
-      } else if (!phonePattern.test(phone)) {
-        document.getElementById("phoneError").textContent = "Use XXX-XXX-XXXX.";
-        isValid = false;
-      }
+      if (phone === "")                  { document.getElementById("phoneError").textContent = "Phone is required.";     isValid = false; }
+      else if (!phonePattern.test(phone)) { document.getElementById("phoneError").textContent = "Use XXX-XXX-XXXX.";    isValid = false; }
 
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (email === "") {
-        document.getElementById("emailError").textContent = "Email is required.";
-        isValid = false;
-      } else if (!emailPattern.test(email)) {
-        document.getElementById("emailError").textContent = "Invalid email.";
-        isValid = false;
-      }
+      if (email === "")                  { document.getElementById("emailError").textContent = "Email is required.";    isValid = false; }
+      else if (!emailPattern.test(email)) { document.getElementById("emailError").textContent = "Invalid email.";       isValid = false; }
 
-      if (inquiry === "") {
-        document.getElementById("inquiryError").textContent = "Select an inquiry type.";
-        isValid = false;
-      }
+      if (inquiry === "") { document.getElementById("inquiryError").textContent = "Select an inquiry type."; isValid = false; }
 
-      if (message === "") {
-        document.getElementById("messageError").textContent = "Message is required.";
-        isValid = false;
-      } else if (message.length < 10) {
-        document.getElementById("messageError").textContent = "At least 10 characters.";
-        isValid = false;
-      }
+      if (message === "")         { document.getElementById("messageError").textContent = "Message is required.";        isValid = false; }
+      else if (message.length < 10) { document.getElementById("messageError").textContent = "At least 10 characters.";  isValid = false; }
 
-      if (!isValid) {
-        event.preventDefault();
-      }
+      if (!isValid) return;
+
+      // ── Save to localStorage for admin dashboard ────────────
+      const tagInfo  = inquiryTagMap[inquiry] || inquiryTagMap.other;
+      const fullName = firstName + ' ' + lastName;
+      const initials = (firstName[0] + lastName[0]).toUpperCase();
+      const now      = new Date();
+      const dateStr  = now.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+      const timeStr  = now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+      const msgId    = 'contact-' + Date.now();
+
+      const newMsg = {
+        id:       msgId,
+        initials: initials,
+        name:     fullName,
+        tag:      tagInfo.label,
+        tagClass: tagInfo.cls,
+        meta:     tagInfo.label + ' &nbsp;·&nbsp; ' + dateStr + ' &nbsp;·&nbsp; ' + timeStr,
+        body:     message,
+        email:    email,
+        phone:    phone.replace(/-/g, ''),
+        dob:      dob,
+      };
+
+      try {
+        const existing = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+        existing.unshift(newMsg); // newest first
+        localStorage.setItem('contactMessages', JSON.stringify(existing));
+      } catch(e) {}
+
+      // ── Show confirmation popup ─────────────────────────────
+      document.getElementById('confirmSummary').innerHTML =
+        'Thanks, <strong style="color:var(--off-white);">' + firstName + '</strong>! ' +
+        'Your message has been received and will appear in the admin inbox shortly. ' +
+        'We\'ll follow up at <strong style="color:var(--off-white);">' + email + '</strong>.';
+
+      const backdrop = document.getElementById('confirmBackdrop');
+      backdrop.style.display = 'flex';
+      // fade in
+      backdrop.style.opacity = '0';
+      backdrop.style.transition = 'opacity 0.35s ease';
+      requestAnimationFrame(() => { backdrop.style.opacity = '1'; });
+
+      form.reset();
     });
 
     function clearErrors() {
