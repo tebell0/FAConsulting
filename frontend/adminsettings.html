@@ -1,0 +1,437 @@
+ca<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — JayXCreatez Productions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+
+  <!-- Custom Cursor -->
+  <div class="cursor">
+    <div class="cursor-dot"  id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav-solid">
+    <a href="index.html" class="nav-logo">Jayx<span>Createz</span></a>
+    <ul class="nav-links">
+      <li><a href="admindash.html">Dashboard</a></li>
+      <li><a href="deliverables.html">Deliver</a></li>
+      <li><a href="adminsettings.html" class="active">Settings</a></li>
+    </ul>
+    <span class="nav-admin-badge">Admin</span>
+  </nav>
+
+  <div class="settings-layout">
+
+    <!-- Page Header -->
+    <div class="settings-header">
+      <p class="section-label" style="margin-bottom:0.4rem;">Admin</p>
+      <h1 class="settings-page-title">Settings</h1>
+      <p class="settings-page-sub">Manage your account credentials and preferences.</p>
+    </div>
+
+    <div class="settings-body">
+
+      <!-- ── Email Address ─────────────────────────── -->
+      <div class="settings-card" id="emailCard">
+        <h2 class="settings-card-title">Email Address</h2>
+        <p class="settings-card-desc">This is the address used for client communication and booking notifications.</p>
+
+        <div class="settings-form-row">
+          <label class="settings-label" for="newEmail">New Email Address</label>
+          <input class="settings-input" type="email" id="newEmail"
+                 placeholder="you@example.com" autocomplete="email" />
+          <p class="settings-current" id="emailCurrent">
+            Current: <span id="emailDisplay">jalen@jayxcreatez.com</span>
+          </p>
+        </div>
+
+        <div class="settings-form-row">
+          <label class="settings-label" for="confirmEmail">Confirm New Email</label>
+          <input class="settings-input" type="email" id="confirmEmail"
+                 placeholder="Repeat new email" autocomplete="email" />
+        </div>
+
+        <div class="settings-action-row">
+          <button class="settings-btn" onclick="saveEmail()">Save Email</button>
+          <button class="settings-btn-ghost" onclick="clearEmailForm()">Cancel</button>
+          <span class="settings-feedback" id="emailFeedback"></span>
+        </div>
+      </div>
+
+      <!-- ── Password ──────────────────────────────── -->
+      <div class="settings-card" id="passwordCard">
+        <h2 class="settings-card-title">Admin Password</h2>
+        <p class="settings-card-desc">Choose a strong password. You'll need it every time you access the admin portal.</p>
+
+        <div class="settings-form-row">
+          <label class="settings-label" for="currentPass">Current Password</label>
+          <input class="settings-input" type="password" id="currentPass"
+                 placeholder="Enter current password" autocomplete="current-password" />
+        </div>
+
+        <hr class="settings-divider" />
+
+        <div class="settings-form-row">
+          <label class="settings-label" for="newPass">New Password</label>
+          <input class="settings-input" type="password" id="newPass"
+                 placeholder="Min. 8 characters" autocomplete="new-password"
+                 oninput="checkStrength(this.value)" />
+          <div class="pw-strength-wrap">
+            <div class="pw-strength-bar">
+              <div class="pw-strength-fill" id="pwFill"></div>
+            </div>
+            <span class="pw-strength-label" id="pwLabel">—</span>
+          </div>
+        </div>
+
+        <div class="settings-form-row">
+          <label class="settings-label" for="confirmPass">Confirm New Password</label>
+          <input class="settings-input" type="password" id="confirmPass"
+                 placeholder="Repeat new password" autocomplete="new-password" />
+        </div>
+
+        <div class="settings-action-row">
+          <button class="settings-btn" onclick="savePassword()">Update Password</button>
+          <button class="settings-btn-ghost" onclick="clearPasswordForm()">Cancel</button>
+          <span class="settings-feedback" id="passwordFeedback"></span>
+        </div>
+      </div>
+
+      <!-- ── Services Manager ──────────────────────── -->
+      <div class="settings-card" id="servicesCard">
+        <h2 class="settings-card-title">Services</h2>
+        <p class="settings-card-desc">Add, edit, or remove session packages. Changes reflect immediately on the booking page.</p>
+
+        <!-- Live service list -->
+        <div class="svc-list" id="svcList"></div>
+
+        <!-- Add / Edit form -->
+        <div class="svc-form" id="svcForm">
+          <div class="svc-form-title" id="svcFormTitle">Add New Service</div>
+          <input type="hidden" id="svcEditId" value="" />
+
+          <div class="svc-form-grid">
+            <div class="settings-form-row">
+              <label class="settings-label" for="svcName">Package Name</label>
+              <input class="settings-input" type="text" id="svcName" placeholder="e.g. The Signature" />
+            </div>
+            <div class="settings-form-row">
+              <label class="settings-label" for="svcDuration">Duration</label>
+              <input class="settings-input" type="text" id="svcDuration" placeholder="e.g. 1 hr" />
+            </div>
+            <div class="settings-form-row">
+              <label class="settings-label" for="svcPrice">Starting Price ($)</label>
+              <div class="pricing-input-wrap" style="width:100%;">
+                <span class="pricing-dollar">$</span>
+                <input class="settings-input pricing-input" type="number" id="svcPrice"
+                       min="1" step="1" placeholder="345" style="width:100%;text-align:left;" />
+              </div>
+            </div>
+            <div class="settings-form-row" style="grid-column:1/-1;">
+              <label class="settings-label" for="svcDesc">Description</label>
+              <textarea class="settings-input svc-textarea" id="svcDesc"
+                        placeholder="A short description shown on the booking and home pages."></textarea>
+            </div>
+          </div>
+
+          <div class="settings-action-row">
+            <button class="settings-btn" onclick="saveSvc()">
+              <span id="svcSaveBtnLabel">Add Service</span>
+            </button>
+            <button class="settings-btn-ghost" onclick="cancelSvcEdit()">Cancel</button>
+            <span class="settings-feedback" id="svcFeedback"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Sign Out ───────────────────────────────── -->
+      <div class="settings-signout-row">
+        <button class="settings-signout-btn" onclick="signOut()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Sign Out
+        </button>
+      </div>
+
+    </div><!-- /.settings-body -->
+  </div><!-- /.settings-layout -->
+
+  <script>
+    /* ── Auth guard ─────────────────────────────── */
+    if (sessionStorage.getItem('adminAuth') !== '1') {
+      window.location.href = 'adminsignin.html';
+    }
+
+    /* ── Credentials (in-memory defaults) ──────── */
+    let ADMIN_PASS  = localStorage.getItem('adminPass')  || 'password';
+    let ADMIN_EMAIL = localStorage.getItem('adminEmail') || 'jalen@jayxcreatez.com';
+
+    // Show current email on load
+    document.getElementById('emailDisplay').textContent = ADMIN_EMAIL;
+
+    /* ── Custom Cursor ──────────────────────────── */
+    const dot  = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function animCursor() {
+      rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
+      dot.style.left  = mx + 'px'; dot.style.top  = my + 'px';
+      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+      requestAnimationFrame(animCursor);
+    })();
+    document.querySelectorAll('a, button, input').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        ring.style.width = '48px'; ring.style.height = '48px';
+        ring.style.borderColor = 'rgba(200,169,126,0.8)';
+      });
+      el.addEventListener('mouseleave', () => {
+        ring.style.width = '32px'; ring.style.height = '32px';
+        ring.style.borderColor = 'rgba(200,169,126,0.5)';
+      });
+    });
+
+    /* ── Feedback helpers ───────────────────────── */
+    function showFeedback(id, msg, type) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.className = 'settings-feedback ' + type;
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.className = 'settings-feedback'; }, 4000);
+    }
+
+    /* ── Password strength ──────────────────────── */
+    function checkStrength(pw) {
+      const fill  = document.getElementById('pwFill');
+      const label = document.getElementById('pwLabel');
+      let score = 0;
+      if (pw.length >= 8)  score++;
+      if (pw.length >= 12) score++;
+      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw))  score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+      const levels = [
+        { label: '—',        color: 'rgba(255,255,255,0.15)', pct: '0%'  },
+        { label: 'Weak',     color: '#e07e7e',                pct: '25%' },
+        { label: 'Fair',     color: '#e0c07e',                pct: '50%' },
+        { label: 'Good',     color: '#c8a97e',                pct: '75%' },
+        { label: 'Strong',   color: '#7ec89e',                pct: '90%' },
+        { label: 'Very Strong', color: '#7ec89e',             pct: '100%'},
+      ];
+      const lvl = pw.length === 0 ? levels[0] : levels[Math.min(score, 5)];
+      fill.style.width      = lvl.pct;
+      fill.style.background = lvl.color;
+      label.textContent     = lvl.label;
+      label.style.color     = pw.length === 0 ? 'rgba(255,255,255,0.35)' : lvl.color;
+    }
+
+    /* ── Save Email ─────────────────────────────── */
+    function saveEmail() {
+      const next    = document.getElementById('newEmail').value.trim();
+      const confirm = document.getElementById('confirmEmail').value.trim();
+
+      if (!next) {
+        showFeedback('emailFeedback', 'Please enter a new email address.', 'error');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+        showFeedback('emailFeedback', 'That doesn\'t look like a valid email.', 'error');
+        return;
+      }
+      if (next !== confirm) {
+        showFeedback('emailFeedback', 'Emails do not match.', 'error');
+        return;
+      }
+      if (next === ADMIN_EMAIL) {
+        showFeedback('emailFeedback', 'That\'s already your current email.', 'error');
+        return;
+      }
+
+      ADMIN_EMAIL = next;
+      localStorage.setItem('adminEmail', ADMIN_EMAIL);
+      document.getElementById('emailDisplay').textContent = ADMIN_EMAIL;
+      clearEmailForm();
+      showFeedback('emailFeedback', '✓ Email updated successfully.', 'success');
+    }
+
+    function clearEmailForm() {
+      document.getElementById('newEmail').value = '';
+      document.getElementById('confirmEmail').value = '';
+    }
+
+    /* ── Save Password ──────────────────────────── */
+    function savePassword() {
+      const current = document.getElementById('currentPass').value;
+      const next    = document.getElementById('newPass').value;
+      const confirm = document.getElementById('confirmPass').value;
+
+      if (!current) {
+        showFeedback('passwordFeedback', 'Enter your current password.', 'error');
+        return;
+      }
+      if (current !== ADMIN_PASS) {
+        showFeedback('passwordFeedback', 'Current password is incorrect.', 'error');
+        document.getElementById('currentPass').value = '';
+        document.getElementById('currentPass').focus();
+        return;
+      }
+      if (next.length < 8) {
+        showFeedback('passwordFeedback', 'New password must be at least 8 characters.', 'error');
+        return;
+      }
+      if (next !== confirm) {
+        showFeedback('passwordFeedback', 'New passwords do not match.', 'error');
+        return;
+      }
+      if (next === ADMIN_PASS) {
+        showFeedback('passwordFeedback', 'New password must differ from current.', 'error');
+        return;
+      }
+
+      ADMIN_PASS = next;
+      localStorage.setItem('adminPass', ADMIN_PASS);
+      clearPasswordForm();
+      showFeedback('passwordFeedback', '✓ Password updated successfully.', 'success');
+    }
+
+    function clearPasswordForm() {
+      document.getElementById('currentPass').value = '';
+      document.getElementById('newPass').value     = '';
+      document.getElementById('confirmPass').value = '';
+      checkStrength('');
+    }
+
+    /* ── Sign Out ───────────────────────────────── */
+    function signOut() {
+      sessionStorage.removeItem('adminAuth');
+      window.location.href = 'adminsignin.html';
+    }
+
+    /* ── Services Manager ───────────────────────── */
+    const SVC_DEFAULTS = [
+      { id: 'svc-1', name: 'The Essentials', duration: '30 min', price: 295, desc: 'A focused 30-minute session delivering clean, editorial portraits with a curated selection of final images.' },
+      { id: 'svc-2', name: 'The Signature',  duration: '1 hr',   price: 345, desc: 'An immersive 1-hour session with multiple looks, locations, and an expanded gallery of polished deliverables.' },
+      { id: 'svc-3', name: 'The Elite',      duration: '2 hr',   price: 427, desc: 'A full 2-hour creative session — wardrobe styling consultation, premium retouching, and an extensive final gallery.' },
+      { id: 'svc-4', name: 'The Wedding',    duration: '5 hr',   price: 1500, desc: 'Full-day wedding coverage from preparation to reception, beautifully documented and delivered.' },
+    ];
+
+    function loadServices() {
+      try {
+        const raw = localStorage.getItem('services');
+        return raw ? JSON.parse(raw) : SVC_DEFAULTS.map(s => Object.assign({}, s));
+      } catch(e) { return SVC_DEFAULTS.map(s => Object.assign({}, s)); }
+    }
+    function saveServices(arr) { localStorage.setItem('services', JSON.stringify(arr)); }
+
+    let services = loadServices();
+
+    function renderSvcList() {
+      const list = document.getElementById('svcList');
+      if (!services.length) {
+        list.innerHTML = '<p class="svc-empty">No services yet. Add one below.</p>';
+        return;
+      }
+      list.innerHTML = services.map((s, i) => `
+        <div class="svc-row" id="svc-row-${s.id}">
+          <div class="svc-row-left">
+            <span class="svc-row-num">${String(i + 1).padStart(2, '0')}</span>
+            <div class="svc-row-info">
+              <div class="svc-row-name">${s.name}</div>
+              <div class="svc-row-meta">${s.duration} &nbsp;·&nbsp; from $${Number(s.price).toLocaleString()}</div>
+              ${s.desc ? `<div class="svc-row-desc">${s.desc}</div>` : ''}
+            </div>
+          </div>
+          <div class="svc-row-actions">
+            <button class="svc-action-btn svc-edit-btn" onclick="startEditSvc('${s.id}')" title="Edit">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Edit
+            </button>
+            <button class="svc-action-btn svc-delete-btn" onclick="deleteSvc('${s.id}')" title="Remove">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function saveSvc() {
+      const name     = document.getElementById('svcName').value.trim();
+      const duration = document.getElementById('svcDuration').value.trim();
+      const price    = parseInt(document.getElementById('svcPrice').value);
+      const desc     = document.getElementById('svcDesc').value.trim();
+      const editId   = document.getElementById('svcEditId').value;
+
+      if (!name)         { showFeedback('svcFeedback', 'Package name is required.', 'error'); return; }
+      if (!duration)     { showFeedback('svcFeedback', 'Duration is required.', 'error'); return; }
+      if (!price || price < 1) { showFeedback('svcFeedback', 'Enter a valid price.', 'error'); return; }
+
+      if (editId) {
+        // Edit existing
+        const svc = services.find(s => s.id === editId);
+        if (svc) { svc.name = name; svc.duration = duration; svc.price = price; svc.desc = desc; }
+        showFeedback('svcFeedback', '✓ Service updated.', 'success');
+      } else {
+        // Add new
+        services.push({ id: 'svc-' + Date.now(), name, duration, price, desc });
+        showFeedback('svcFeedback', '✓ Service added.', 'success');
+      }
+
+      // Sync price-{key} so Packages & Pricing card and calendar.html stay in sync
+      const priceKey = name.replace(/^The\s+/i, '').toLowerCase();
+      localStorage.setItem('price-' + priceKey, price);
+
+      saveServices(services);
+      renderSvcList();
+      cancelSvcEdit();
+    }
+
+    function startEditSvc(id) {
+      const svc = services.find(s => s.id === id);
+      if (!svc) return;
+      document.getElementById('svcEditId').value          = svc.id;
+      document.getElementById('svcName').value            = svc.name;
+      document.getElementById('svcDuration').value        = svc.duration;
+      document.getElementById('svcPrice').value           = svc.price;
+      document.getElementById('svcDesc').value            = svc.desc || '';
+      document.getElementById('svcFormTitle').textContent = 'Edit Service';
+      document.getElementById('svcSaveBtnLabel').textContent = 'Save Changes';
+      document.getElementById('svcForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function cancelSvcEdit() {
+      document.getElementById('svcEditId').value          = '';
+      document.getElementById('svcName').value            = '';
+      document.getElementById('svcDuration').value        = '';
+      document.getElementById('svcPrice').value           = '';
+      document.getElementById('svcDesc').value            = '';
+      document.getElementById('svcFormTitle').textContent = 'Add New Service';
+      document.getElementById('svcSaveBtnLabel').textContent = 'Add Service';
+    }
+
+    function deleteSvc(id) {
+      if (!confirm('Remove this service? This cannot be undone.')) return;
+      services = services.filter(s => s.id !== id);
+      saveServices(services);
+      renderSvcList();
+      showFeedback('svcFeedback', '✓ Service removed.', 'success');
+    }
+
+    renderSvcList();
+  </script>
+</body>
+</html>
