@@ -1,0 +1,1321 @@
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - JayXCreatez Productions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+</head>
+
+<body>
+  <!-- Custom Cursor -->
+  <div class="cursor">
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="nav-solid">
+    <a href="index.html" class="nav-logo">Jayx<span>Createz</span></a>
+    <ul class="nav-links">
+      <li><a href="admindash.html" class="active">Dashboard</a></li>
+      <li><a href="deliverables.html">Deliver</a></li>
+      <li><a href="adminsettings.html">Settings</a></li>
+    </ul>
+    <span class="nav-admin-badge">Admin</span>
+  </nav>
+
+  <!-- Dashboard Content -->
+  <div class="dash-layout">
+
+    <!-- Upcoming Appointment Card (above sections) -->
+    <div class="upcoming-hero">
+      <button class="upcoming-arrow" id="prevAppt" onclick="changeAppt(-1)" aria-label="Previous appointment">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 1L3 7l6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="upcoming-card-clip">
+        <div class="upcoming-card fade-up">
+        <div class="upcoming-card-header">
+          <div class="upcoming-eyebrow">Nearest Upcoming Appointment</div>
+          <span class="upcoming-badge" id="apptBadge">Confirmed</span>
+        </div>
+        <div class="upcoming-divider"></div>
+        <div class="upcoming-grid">
+          <div class="upcoming-field">
+            <div class="upcoming-label">Client Name</div>
+            <div class="upcoming-value" id="apptName">Aaliya Montgomery</div>
+          </div>
+          <div class="upcoming-field">
+            <div class="upcoming-label">Date</div>
+            <div class="upcoming-value" id="apptDate">April 10, 2026</div>
+          </div>
+          <div class="upcoming-field">
+            <div class="upcoming-label">Time</div>
+            <div class="upcoming-value" id="apptTime">2:00 PM</div>
+          </div>
+          <div class="upcoming-field">
+            <div class="upcoming-label">Session Type</div>
+            <div class="upcoming-value" id="apptType">The Signature · 1 hr</div>
+          </div>
+          <div class="upcoming-field upcoming-field--full">
+            <div class="upcoming-label">Location</div>
+            <div class="upcoming-value" id="apptLocation">Hermann Park, Houston, TX</div>
+          </div>
+        </div>
+        <div class="upcoming-actions">
+          <button class="btn-next">
+            View Details
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </button>
+          <button class="btn-back">Reschedule</button>
+          <span class="appt-counter" id="apptCounter">1 / 3</span>
+        </div>
+      </div>
+      </div><!-- /.upcoming-card-clip -->
+
+      <button class="upcoming-arrow" id="nextAppt" onclick="changeAppt(1)" aria-label="Next appointment">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 1l6 6-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- Dashboard Blocks Row -->
+    <div class="dash-blocks">
+
+      <!-- Appointments Block -->
+      <div id="appointments" class="dash-block fade-up">
+        <div class="dash-block-header">
+          <div class="section-label">Manage</div>
+          <h2 class="dash-block-title">Appointments</h2>
+        </div>
+        <!-- Mini Calendar -->
+        <div class="dash-cal">
+          <div class="dash-cal-header">
+            <button class="dash-cal-nav" onclick="dashChangeMonth(-1)">
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M9 1L3 7l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            <span class="dash-cal-month" id="dashCalMonth">April 2026</span>
+            <button class="dash-cal-nav" onclick="dashChangeMonth(1)">
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M5 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="dash-cal-grid" id="dashCalGrid"></div>
+        </div>
+        <p class="dash-block-sub" id="upcomingCountLabel">3 upcoming this month</p>
+        <button class="avail-btn" onclick="openAvail()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 5h12M5 2V1M9 2V1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M4 8h2M8 8h2M4 10.5h2M8 10.5h2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+          Set Availability
+        </button>
+      </div>
+
+      <!-- Payments Block -->
+      <div id="payments" class="dash-block fade-up">
+        <div class="dash-block-header">
+          <div class="section-label">Financials</div>
+          <h2 class="dash-block-title">Payments</h2>
+        </div>
+        <div class="dash-stat-row">
+          <div class="dash-stat">
+            <div class="dash-stat-num">$1,067</div>
+            <div class="dash-stat-label">This Month</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-num">3</div>
+            <div class="dash-stat-label">Invoices</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-num">$0</div>
+            <div class="dash-stat-label">Outstanding</div>
+          </div>
+        </div>
+        <p class="dash-empty" style="margin-top:1.5rem;">No payment records found.</p>
+      </div>
+
+      <!-- Messages Block -->
+      <div id="messages" class="dash-block fade-up">
+        <div class="dash-block-header">
+          <div class="section-label">Inbox</div>
+          <h2 class="dash-block-title">Messages</h2>
+        </div>
+        <ul class="msg-list" id="msgList">
+          <li class="msg-row" onclick="openMsg(0)">
+            <div class="msg-avatar">ND</div>
+            <div class="msg-body">
+              <div class="msg-top">
+                <span class="msg-name">Nia Davis</span>
+                <span class="msg-tag msg-tag--reschedule">Reschedule</span>
+              </div>
+              <p class="msg-preview">Hey Jalen, something came up — can we push the shoot back a week?</p>
+            </div>
+            <span class="msg-unread"></span>
+          </li>
+          <li class="msg-row" onclick="openMsg(1)">
+            <div class="msg-avatar">JR</div>
+            <div class="msg-body">
+              <div class="msg-top">
+                <span class="msg-name">Jordan Reid</span>
+                <span class="msg-tag msg-tag--billing">Billing</span>
+              </div>
+              <p class="msg-preview">I sent the deposit last Thursday — just wanted to confirm you received it.</p>
+            </div>
+          </li>
+          <li class="msg-row" onclick="openMsg(2)">
+            <div class="msg-avatar">CM</div>
+            <div class="msg-body">
+              <div class="msg-top">
+                <span class="msg-name">Camille Monroe</span>
+                <span class="msg-tag msg-tag--info">Additional Info</span>
+              </div>
+              <p class="msg-preview">Quick question about the turnaround time for the edited gallery photos.</p>
+            </div>
+          </li>
+        </ul>
+        <p class="dash-block-sub">3 unread messages</p>
+      </div>
+
+    </div>
+
+    <!-- Shared pie chart tooltip -->
+    <div class="pie-tooltip" id="pieTooltip"></div>
+
+    <!-- Analytics Row -->
+    <div class="analytics-row fade-up">
+
+      <!-- Chart 1: Session Types -->
+      <div class="analytics-card">
+        <div class="analytics-header">
+          <div class="section-label">Breakdown</div>
+          <h2 class="dash-block-title">Session Types</h2>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartTypes" width="160" height="160"></canvas>
+          <div class="chart-center-label" id="chartTypesLabel">
+            <span class="chart-center-num">3</span>
+            <span class="chart-center-sub">sessions</span>
+          </div>
+        </div>
+        <ul class="chart-legend" id="legendTypes"></ul>
+      </div>
+
+      <!-- Chart 2: Payment Status -->
+      <div class="analytics-card">
+        <div class="analytics-header">
+          <div class="section-label">Financials</div>
+          <h2 class="dash-block-title">Payment Status</h2>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartPayments" width="160" height="160"></canvas>
+          <div class="chart-center-label" id="chartPaymentsLabel">
+            <span class="chart-center-num">$1,067</span>
+            <span class="chart-center-sub">collected</span>
+          </div>
+        </div>
+        <ul class="chart-legend" id="legendPayments"></ul>
+      </div>
+
+      <!-- Chart 3: Inquiry Types -->
+      <div class="analytics-card">
+        <div class="analytics-header">
+          <div class="section-label">Inbox</div>
+          <h2 class="dash-block-title">Inquiry Types</h2>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartInquiries" width="160" height="160"></canvas>
+          <div class="chart-center-label" id="chartInquiriesLabel">
+            <span class="chart-center-num">3</span>
+            <span class="chart-center-sub">inquiries</span>
+          </div>
+        </div>
+        <ul class="chart-legend" id="legendInquiries"></ul>
+      </div>
+
+    </div>
+
+    <!-- Deliver Package CTA -->
+    <div class="deliver-cta fade-up">
+      <div class="deliver-cta-inner">
+        <div class="deliver-cta-text">
+          <div class="section-label">Final Step</div>
+          <h2 class="deliver-cta-title">Ready to deliver?</h2>
+          <p class="deliver-cta-sub">Upload edited photos &amp; videos, generate a secure client link, and send the finished package — all in one place.</p>
+        </div>
+        <a href="deliverables.html" class="deliver-cta-btn">
+          Build &amp; Send Package
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Appointment History -->
+    <div class="appt-history fade-up">
+      <div class="appt-history-header">
+        <div>
+          <div class="section-label">Archive</div>
+          <h2 class="dash-block-title" style="font-size:1.6rem;">Appointment History</h2>
+          <p class="appt-history-sub">Past sessions &amp; clients with a delivered package link.</p>
+        </div>
+        <div class="appt-history-filters" id="apptHistoryFilters">
+          <button class="appt-filter-btn active" onclick="filterHistory('all', this)">All</button>
+          <button class="appt-filter-btn" onclick="filterHistory('upcoming', this)">Pending</button>
+          <button class="appt-filter-btn" onclick="filterHistory('delivered', this)">Delivered</button>
+          <button class="appt-filter-btn" onclick="filterHistory('completed', this)">Completed</button>
+          <button class="appt-filter-btn" onclick="filterHistory('cancelled', this)">Cancelled</button>
+        </div>
+      </div>
+
+      <div class="appt-history-table-wrap">
+        <table class="appt-history-table" id="apptHistoryTable">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Package</th>
+              <th>Date &amp; Time</th>
+              <th>Location</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="apptHistoryBody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="appt-history-empty" id="apptHistoryEmpty" style="display:none;">
+        No records match this filter.
+      </div>
+    </div>
+
+  </div>
+
+<!-- Availability Manager Modal -->
+  <div class="avail-backdrop" id="availBackdrop" onclick="closeAvailBackdrop(event)">
+    <div class="avail-modal" role="dialog" aria-modal="true" aria-labelledby="availModalTitle">
+      <button class="avail-modal-close" onclick="closeAvail()" aria-label="Close">&times;</button>
+
+      <h2 class="avail-modal-title" id="availModalTitle">Availability Manager</h2>
+      <p class="avail-modal-sub">Select dates to block entirely or disable individual time slots. Changes are reflected immediately on the booking page.</p>
+
+      <!-- Modal mini calendar -->
+      <div class="avail-cal-header">
+        <button class="avail-cal-nav" onclick="availChangeMonth(-1)" aria-label="Previous month">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M9 1L3 7l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+        <span class="avail-cal-month-label" id="availCalLabel">April 2026</span>
+        <button class="avail-cal-nav" onclick="availChangeMonth(1)" aria-label="Next month">
+          <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M5 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="avail-cal-grid" id="availCalGrid"></div>
+
+      <div class="avail-legend-row">
+        <div class="avail-legend-item"><div class="avail-legend-dot" style="background:rgba(180,0,0,0.6)"></div>Fully blocked</div>
+        <div class="avail-legend-item"><div class="avail-legend-dot" style="background:var(--warm)"></div>Partial slots blocked</div>
+        <div class="avail-legend-item"><div class="avail-legend-dot" style="background:rgba(245,240,235,0.2)"></div>Available</div>
+      </div>
+
+      <div class="avail-divider"></div>
+
+      <!-- Per-date config panel — shown when a date is selected -->
+      <div class="avail-date-panel" id="availDatePanel">
+        <div class="avail-date-label" id="availDateLabel">Configure — April 10, 2026</div>
+
+        <div class="avail-block-row">
+          <label>
+            <input type="checkbox" class="avail-toggle" id="availBlockFull" onchange="onBlockFullToggle()">
+            Block entire day (clients cannot book this date)
+          </label>
+        </div>
+
+        <div class="avail-slots-section" id="availSlotsSection">
+          <div class="avail-slots-label">Or block individual time slots — click to toggle:</div>
+          <div class="avail-slots-grid" id="availSlotsGrid"></div>
+          <p class="avail-hint">Blocked slots appear greyed-out and unselectable on the booking page. Toggling "Block entire day" overrides individual slots.</p>
+        </div>
+
+        <div class="avail-actions">
+          <button class="avail-save-btn" onclick="saveAvailability()">Save Changes</button>
+          <button class="avail-clear-btn" onclick="clearDateConfig()">Clear This Date</button>
+          <span class="avail-saved-msg" id="availSavedMsg">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            Saved
+          </span>
+        </div>
+      </div>
+
+      <div id="availNoDateHint" style="font-size:0.78rem;color:rgba(245,240,235,0.3);text-align:center;padding:1.2rem 0;">
+        ← Select a date above to configure its availability
+      </div>
+    </div>
+  </div>
+
+<!-- Message Modal -->
+  <div class="msg-modal-backdrop" id="msgModalBackdrop" onclick="closeMsg(event)">
+    <div class="msg-modal" role="dialog" aria-modal="true" aria-labelledby="msgModalTitle">
+      <button class="msg-modal-close" onclick="closeMsg()" aria-label="Close">&times;</button>
+      <div class="msg-modal-header">
+        <div class="msg-modal-avatar" id="mmAvatar">ND</div>
+        <div>
+          <div class="msg-modal-name" id="mmName">Nia Davis</div>
+          <div class="msg-modal-meta" id="mmMeta">Reschedule &nbsp;·&nbsp; April 8, 2026 &nbsp;·&nbsp; 9:14 AM</div>
+        </div>
+        <span class="msg-modal-tag" id="mmTag">Reschedule</span>
+      </div>
+      <div class="msg-modal-divider"></div>
+      <p class="msg-modal-body" id="mmBody">Loading…</p>
+      <div class="msg-modal-actions">
+        <button class="btn-next" id="mmEmail">
+          Email Client
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <button class="btn-back" id="mmCall">Call / Text</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Footer -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo">Jayx<span>Createz</span></a>
+        <p>Premium photography experiences based in Houston, TX. Capturing moments that live forever.</p>
+        <a href="adminsignin.html" class="footer-admin-btn">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="1" y="5" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M4 5V3.5a2 2 0 014 0V5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Admin Portal
+        </a>
+      </div>
+      <div>
+        <div class="footer-col-title">Navigate</div>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="calendar.html">Book a Session</a></li>
+          <li><a href="#">About</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="calendar.html">The Essentials</a></li>
+          <li><a href="calendar.html">The Signature</a></li>
+          <li><a href="calendar.html">The Elite</a></li>
+          <li><a href="calendar.html">Weddings</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <ul class="footer-links">
+          <li><a href="mailto:jalen@jayxcreatez.com">jalen@jayxcreatez.com</a></li>
+          <li><a href="#">Houston, TX</a></li>
+          <li><a href="#">Instagram</a></li>
+          <li><a href="#">Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2026 JayxCreatez Productions. All rights reserved.</span>
+      <div class="footer-socials">
+        <a href="https://www.instagram.com/jayxcreatez/" class="social-link" target="_blank" rel="noopener">
+          <img src="ig-icon-no-bg.png" alt="Instagram" />
+        </a>
+        <a href="https://facebook.com/YOUR_PAGE" class="social-link" target="_blank" rel="noopener">
+          <img src="fb-icon-no-bg.png" alt="Facebook" />
+        </a>
+        <a href="https://x.com/YOUR_HANDLE" class="social-link" target="_blank" rel="noopener">
+          <img src="x-icon-no-bg.png" alt="X" />
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Cursor
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    (function animCursor() {
+      rx += (mx - rx) * 0.15; ry += (my - ry) * 0.15;
+      dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+      requestAnimationFrame(animCursor);
+    })();
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => { ring.style.width = '48px'; ring.style.height = '48px'; ring.style.borderColor = 'rgba(200,169,126,0.8)'; });
+      el.addEventListener('mouseleave', () => { ring.style.width = '32px'; ring.style.height = '32px'; ring.style.borderColor = 'rgba(200,169,126,0.5)'; });
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+    // ── Unified Appointment Store ─────────────────────────────
+    // Single source of truth in localStorage('appointments').
+    // status: 'upcoming' | 'completed' | 'delivered' | 'cancelled'
+    // On every load, any 'upcoming' whose isoDate < today is auto-promoted to 'completed'.
+
+    const SEED_APPOINTMENTS = [
+      // ── Upcoming ──
+      { id:'jxc-001', name:'Aaliya Montgomery', initials:'AM', package:'The Signature', isoDate:'2026-04-10', time:'2:00 PM',  location:'Hermann Park, Houston, TX',         badge:'Confirmed', status:'upcoming' },
+      { id:'jxc-002', name:'Marcus Thompson',   initials:'MT', package:'The Elite',     isoDate:'2026-04-17', time:'11:00 AM', location:'Downtown Houston, TX',               badge:'Confirmed', status:'upcoming' },
+      { id:'jxc-003', name:'Brianna Sanders',   initials:'BS', package:'The Essentials',isoDate:'2026-04-24', time:'4:30 PM',  location:'Memorial Park, Houston, TX',         badge:'Pending',   status:'upcoming' },
+      // ── History seed ──
+      { id:'jxc-h01', name:'Monique Ellis',     initials:'ME', package:'The Elite',     isoDate:'2026-03-28', time:'1:00 PM',  location:'Hermann Park, Houston, TX',          badge:'Confirmed', status:'completed', link:null },
+      { id:'jxc-h02', name:'Darius Webb',       initials:'DW', package:'The Signature', isoDate:'2026-03-21', time:'11:00 AM', location:'Downtown Houston, TX',               badge:'Confirmed', status:'delivered', link:'https://jayxcreatez.com/gallery/darius-webb-2026' },
+      { id:'jxc-h03', name:'Simone Carter',     initials:'SC', package:'The Essentials',isoDate:'2026-03-14', time:'3:00 PM',  location:'Memorial Park, Houston, TX',         badge:'Confirmed', status:'delivered', link:'https://jayxcreatez.com/gallery/simone-carter-2026' },
+      { id:'jxc-h04', name:'Andre Nolan',       initials:'AN', package:'The Wedding',   isoDate:'2026-03-07', time:'10:00 AM', location:'The Corinthian, Houston, TX',        badge:'Confirmed', status:'delivered', link:'https://jayxcreatez.com/gallery/nolan-wedding-2026' },
+      { id:'jxc-h05', name:'Jasmine Forde',     initials:'JF', package:'The Signature', isoDate:'2026-02-22', time:'2:00 PM',  location:'Studio · Houston, TX',              badge:'Cancelled', status:'cancelled', link:null },
+      { id:'jxc-h06', name:'Tyler Graves',      initials:'TG', package:'The Essentials',isoDate:'2026-02-14', time:'12:00 PM', location:'Outdoor — Client Choice',            badge:'Confirmed', status:'completed', link:null },
+      { id:'jxc-h07', name:'Keisha Morrow',     initials:'KM', package:'The Elite',     isoDate:'2026-01-30', time:'4:00 PM',  location:'Buffalo Bayou Park, Houston, TX',   badge:'Confirmed', status:'delivered', link:'https://jayxcreatez.com/gallery/keisha-morrow-2026' },
+    ];
+
+    function loadAppointments() {
+      try {
+        const stored = localStorage.getItem('appointments');
+        return stored ? JSON.parse(stored) : null;
+      } catch(e) { return null; }
+    }
+    function saveAppointments(arr) {
+      localStorage.setItem('appointments', JSON.stringify(arr));
+    }
+
+    // Auto-promote: 'upcoming' records whose date has passed become 'completed'
+    function autoPromote(arr) {
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0,0,0,0);
+      let changed = false;
+      arr.forEach(a => {
+        if (a.status === 'upcoming' && new Date(a.isoDate) < todayMidnight) {
+          a.status = 'completed';
+          changed = true;
+        }
+      });
+      if (changed) saveAppointments(arr);
+      return arr;
+    }
+
+    // Initialise store: seed on first load, then always merge any new client bookings
+    let allAppointments = loadAppointments();
+    if (!allAppointments) {
+      allAppointments = SEED_APPOINTMENTS.map(a => Object.assign({}, a));
+      saveAppointments(allAppointments);
+    } else {
+      // Merge seed records that are not already present (by id)
+      const existingIds = new Set(allAppointments.map(a => a.id));
+      SEED_APPOINTMENTS.forEach(seed => {
+        if (!existingIds.has(seed.id)) allAppointments.push(Object.assign({}, seed));
+      });
+      saveAppointments(allAppointments);
+    }
+    allAppointments = autoPromote(allAppointments);
+
+    // Derived views
+    const appointments    = allAppointments.filter(a => a.status === 'upcoming')
+                                           .sort((a,b) => new Date(a.isoDate) - new Date(b.isoDate));
+    const historyRecords  = allAppointments
+                                           .slice()
+                                           .sort((a,b) => new Date(b.isoDate) - new Date(a.isoDate));
+
+    // ── Appointment Carousel ──────────────────────────────────
+    // Format helpers
+    function fmtDate(iso) {
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' });
+    }
+    function pkgDuration(pkg) {
+      return { 'The Essentials':'30 min', 'The Signature':'1 hr', 'The Elite':'2 hr', 'The Wedding':'5 hr' }[pkg] || '';
+    }
+
+    let apptIndex = 0;
+
+    function renderCarousel() {
+      if (!appointments.length) {
+        document.querySelector('.upcoming-hero').style.display = 'none';
+        return;
+      }
+      const a = appointments[apptIndex];
+      document.getElementById('apptName').textContent     = a.name;
+      document.getElementById('apptDate').textContent     = fmtDate(a.isoDate);
+      document.getElementById('apptTime').textContent     = a.time;
+      document.getElementById('apptType').textContent     = a.package + ' · ' + pkgDuration(a.package);
+      document.getElementById('apptLocation').textContent = a.location;
+      document.getElementById('apptBadge').textContent    = a.badge;
+      document.getElementById('apptCounter').textContent  = (apptIndex + 1) + ' / ' + appointments.length;
+    }
+    renderCarousel();
+
+    function changeAppt(dir) {
+      if (!appointments.length) return;
+      const card = document.querySelector('.upcoming-card');
+
+      card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+      card.style.opacity    = '0';
+      card.style.transform  = dir > 0 ? 'translateX(-40px)' : 'translateX(40px)';
+
+      setTimeout(() => {
+        apptIndex = (apptIndex + dir + appointments.length) % appointments.length;
+        renderCarousel();
+
+        card.style.transition = 'none';
+        card.style.transform  = dir > 0 ? 'translateX(40px)' : 'translateX(-40px)';
+        void card.offsetWidth;
+        card.style.transition = 'opacity 0.28s ease, transform 0.28s cubic-bezier(0.16,1,0.3,1)';
+        card.style.opacity    = '1';
+        card.style.transform  = 'translateX(0)';
+      }, 210);
+    }
+
+    // Dashboard mini calendar
+    const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    let dashYear = 2026, dashMonth = 3; // April = index 3
+
+    function apptDaysInMonth(year, month) {
+      return appointments
+        .filter(a => { const d = new Date(a.isoDate); return d.getFullYear() === year && d.getMonth() === month; })
+        .map(a => new Date(a.isoDate).getDate());
+    }
+
+    function renderDashCal() {
+      const grid = document.getElementById('dashCalGrid');
+      const label = document.getElementById('dashCalMonth');
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      label.textContent = monthNames[dashMonth] + ' ' + dashYear;
+
+      const apptDays    = apptDaysInMonth(dashYear, dashMonth);
+      const blockedDays = getBlockedDates()
+        .filter(iso => {
+          const d = new Date(iso + 'T00:00:00');
+          return d.getFullYear() === dashYear && d.getMonth() === dashMonth;
+        })
+        .map(iso => new Date(iso + 'T00:00:00').getDate());
+
+      const today = new Date();
+      const firstDay = new Date(dashYear, dashMonth, 1).getDay();
+      const daysInMonth = new Date(dashYear, dashMonth + 1, 0).getDate();
+
+      // Update upcoming count label for current calendar month
+      const upcomingThisMonth = appointments.filter(a => {
+        const d = new Date(a.isoDate + 'T00:00:00');
+        return d.getFullYear() === dashYear && d.getMonth() === dashMonth;
+      }).length;
+      const countLabel = document.getElementById('upcomingCountLabel');
+      if (countLabel) {
+        countLabel.textContent = upcomingThisMonth === 1
+          ? '1 upcoming this month'
+          : upcomingThisMonth + ' upcoming this month';
+      }
+
+      let html = DAYS.map(d => `<div class="dash-cal-day-name">${d}</div>`).join('');
+      for (let i = 0; i < firstDay; i++) html += `<div class="dash-cal-cell"></div>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const isToday   = today.getFullYear() === dashYear && today.getMonth() === dashMonth && today.getDate() === d;
+        const hasAppt   = apptDays.includes(d);
+        const isBlocked = blockedDays.includes(d);
+        html += `<div class="dash-cal-cell${isToday ? ' dash-cal-today' : ''}">
+          <span>${d}</span>
+          ${hasAppt   ? '<div class="dash-cal-dot"></div>' : ''}
+          ${isBlocked ? '<div class="dash-cal-dot" style="background:rgba(180,0,0,0.6)"></div>' : ''}
+        </div>`;
+      }
+      grid.innerHTML = html;
+    }
+
+    function dashChangeMonth(dir) {
+      dashMonth += dir;
+      if (dashMonth > 11) { dashMonth = 0; dashYear++; }
+      if (dashMonth < 0)  { dashMonth = 11; dashYear--; }
+      renderDashCal();
+    }
+
+    renderDashCal();
+
+    // Messages
+    const messages = [
+      {
+        initials: 'ND',
+        name:     'Nia Davis',
+        tag:      'Reschedule',
+        tagClass: 'msg-tag--reschedule',
+        meta:     'Reschedule &nbsp;·&nbsp; April 8, 2026 &nbsp;·&nbsp; 9:14 AM',
+        body:     "Hey Jalen! Something came up on our end and we may need to push the shoot back by about a week. We were originally booked for April 10th at 2:00 PM at Hermann Park. Would April 17th or 18th work for you? We're flexible on time. Sorry for the short notice — really appreciate your understanding!",
+        email:    'nia.davis@email.com',
+        phone:    '8325550141'
+      },
+      {
+        initials: 'JR',
+        name:     'Jordan Reid',
+        tag:      'Billing',
+        tagClass: 'msg-tag--billing',
+        meta:     'Billing &nbsp;·&nbsp; April 9, 2026 &nbsp;·&nbsp; 1:47 PM',
+        body:     "Hi Jalen, I just wanted to follow up on the deposit I sent over last Thursday via Zelle. The amount was $150 for the Signature package. I haven't seen a confirmation come through yet and wanted to make sure it went to the right account. Please let me know if you need me to resend or try a different method. Thanks!",
+        email:    'jordan.reid@email.com',
+        phone:    '7135550289'
+      },
+      {
+        initials: 'CM',
+        name:     'Camille Monroe',
+        tag:      'Additional Info',
+        tagClass: 'msg-tag--info',
+        meta:     'Additional Info &nbsp;·&nbsp; April 9, 2026 &nbsp;·&nbsp; 4:05 PM',
+        body:     "Hey! Super excited for our session next week. Quick question — roughly how long does it take to receive the edited gallery after the shoot? I have a birthday post I'd love to use some of the photos for and I'm trying to plan around the timeline. Also, do you send a sneak peek before the full delivery? Thank you so much!",
+        email:    'camille.monroe@email.com',
+        phone:    '2815550374'
+      }
+    ];
+
+    function openMsg(i) {
+      const m = messages[i];
+      document.getElementById('mmAvatar').textContent = m.initials;
+      document.getElementById('mmName').textContent   = m.name;
+      document.getElementById('mmMeta').innerHTML     = m.meta;
+      document.getElementById('mmBody').textContent   = m.body;
+      const tag = document.getElementById('mmTag');
+      tag.textContent = m.tag;
+      tag.className   = 'msg-modal-tag ' + m.tagClass;
+      document.getElementById('mmEmail').onclick = () => { window.location.href = 'mailto:' + m.email; };
+      document.getElementById('mmCall').onclick  = () => { window.location.href = 'tel:' + m.phone; };
+      // Mark row as read
+      const dot = document.querySelectorAll('.msg-row')[i].querySelector('.msg-unread');
+      if (dot) dot.remove();
+      document.getElementById('msgModalBackdrop').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMsg(e) {
+      if (e && e.type === 'click') {
+        const backdrop = document.getElementById('msgModalBackdrop');
+        if (e.target !== backdrop && !e.target.closest('.msg-modal-close')) return;
+      }
+      document.getElementById('msgModalBackdrop').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.getElementById('msgModalBackdrop').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // ── Analytics Pie Charts ──────────────────────────────────
+    const pieTooltip = document.getElementById('pieTooltip');
+
+    function showPieTooltip(e, html) {
+      pieTooltip.innerHTML = html;
+      pieTooltip.classList.add('visible');
+      movePieTooltip(e);
+    }
+    function movePieTooltip(e) {
+      const x = e.clientX, y = e.clientY;
+      const tw = pieTooltip.offsetWidth, th = pieTooltip.offsetHeight;
+      const vw = window.innerWidth;
+      let left = x + 14;
+      if (left + tw > vw - 12) left = x - tw - 14;
+      pieTooltip.style.left = left + 'px';
+      pieTooltip.style.top  = (y - th / 2) + 'px';
+    }
+    function hidePieTooltip() {
+      pieTooltip.classList.remove('visible');
+    }
+
+    function drawPie(canvasId, legendId, slices, onHover) {
+      const canvas = document.getElementById(canvasId);
+      const ctx    = canvas.getContext('2d');
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const outerR = 72, innerR = 46;
+      const gap = 0.03; // radians gap between slices
+      const total = slices.reduce((s, d) => s + d.value, 0);
+      let angle = -Math.PI / 2;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      slices.forEach((slice, i) => {
+        const sweep = (slice.value / total) * (Math.PI * 2) - gap;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, outerR, angle + gap / 2, angle + gap / 2 + sweep);
+        ctx.arc(cx, cy, innerR, angle + gap / 2 + sweep, angle + gap / 2, true);
+        ctx.closePath();
+        ctx.fillStyle = slice.color;
+        ctx.fill();
+
+        // Hover: store arc data for later
+        slice._start = angle + gap / 2;
+        slice._end   = angle + gap / 2 + sweep;
+        angle += sweep + gap;
+      });
+
+      // Legend
+      const legend = document.getElementById(legendId);
+      legend.innerHTML = slices.map(s =>
+        `<li>
+          <span class="legend-dot" style="background:${s.color}"></span>
+          <span class="legend-label">${s.label}</span>
+          <span class="legend-val">${Math.round((s.value / total) * 100)}%</span>
+        </li>`
+      ).join('');
+
+      // Interactive hover — expand slice slightly
+      let lastHit = -1;
+      canvas.onmousemove = function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) * (canvas.width  / rect.width);
+        const my = (e.clientY - rect.top)  * (canvas.height / rect.height);
+        const dx = mx - cx, dy = my - cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < innerR || dist > outerR + 6) {
+          redraw(ctx, cx, cy, outerR, innerR, gap, slices, -1);
+          hidePieTooltip();
+          lastHit = -1;
+          return;
+        }
+        const a = Math.atan2(dy, dx);
+        const norm = a < -Math.PI / 2 ? a + Math.PI * 2 : a;
+        const hit = slices.findIndex(s => {
+          const start = s._start < -Math.PI/2 ? s._start + Math.PI*2 : s._start;
+          const end   = s._end   < -Math.PI/2 ? s._end   + Math.PI*2 : s._end;
+          return norm >= start && norm <= end;
+        });
+        redraw(ctx, cx, cy, outerR, innerR, gap, slices, hit);
+        if (hit !== -1 && onHover) {
+          const html = onHover(slices[hit], e);
+          if (html) showPieTooltip(e, html);
+          else hidePieTooltip();
+        } else if (hit === -1) {
+          hidePieTooltip();
+        } else {
+          movePieTooltip(e);
+        }
+        lastHit = hit;
+      };
+      canvas.onmouseleave = () => {
+        redraw(ctx, cx, cy, outerR, innerR, gap, slices, -1);
+        hidePieTooltip();
+        lastHit = -1;
+      };
+    }
+
+    function redraw(ctx, cx, cy, outerR, innerR, gap, slices, activeIdx) {
+      const total = slices.reduce((s, d) => s + d.value, 0);
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      let angle = -Math.PI / 2;
+      slices.forEach((slice, i) => {
+        const sweep = (slice.value / total) * (Math.PI * 2) - gap;
+        const r = (i === activeIdx) ? outerR + 8 : outerR;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, angle + gap / 2, angle + gap / 2 + sweep);
+        ctx.arc(cx, cy, innerR, angle + gap / 2 + sweep, angle + gap / 2, true);
+        ctx.closePath();
+        ctx.fillStyle = (i === activeIdx)
+          ? slice.color
+          : slice.color + 'cc';
+        ctx.fill();
+        slice._start = angle + gap / 2;
+        slice._end   = angle + gap / 2 + sweep;
+        angle += sweep + gap;
+      });
+    }
+
+    // ── Analytics — driven from live appointment data ─────────
+    // Session Types chart (upcoming + all history)
+    const PKG_COLORS = {
+      'The Signature':  '#c8a97e',
+      'The Elite':      '#7ec8c8',
+      'The Essentials': '#b89ec8',
+      'The Wedding':    '#7ec89e',
+    };
+    const PKG_DURATION = { 'The Essentials':'30 min', 'The Signature':'1 hr', 'The Elite':'2 hr', 'The Wedding':'5 hr' };
+
+    function buildTypesSlices() {
+      const counts = {};
+      allAppointments.filter(a => a.status !== 'cancelled').forEach(a => {
+        counts[a.package] = (counts[a.package] || 0) + 1;
+      });
+      return Object.entries(counts).map(([pkg, val]) => ({
+        label: pkg, value: val, color: PKG_COLORS[pkg] || '#c8a97e'
+      }));
+    }
+
+    function buildPaymentSlices() {
+      const upcoming  = allAppointments.filter(a => a.status === 'upcoming').length;
+      const delivered = allAppointments.filter(a => a.status === 'delivered').length;
+      const completed = allAppointments.filter(a => a.status === 'completed').length;
+      const cancelled = allAppointments.filter(a => a.status === 'cancelled').length;
+      const slices = [];
+      if (delivered > 0) slices.push({ label: 'Delivered', value: delivered, color: '#7ec8c8' });
+      if (upcoming  > 0) slices.push({ label: 'Upcoming',  value: upcoming,  color: '#c8a97e' });
+      if (completed > 0) slices.push({ label: 'Completed', value: completed, color: '#b89ec8' });
+      if (cancelled > 0) slices.push({ label: 'Cancelled', value: cancelled, color: 'rgba(180,60,60,0.7)' });
+      return slices.length ? slices : [{ label: 'No data', value: 1, color: 'rgba(245,240,235,0.15)' }];
+    }
+
+    // Payment stats block
+    function updatePaymentStats() {
+      const PRICES = { 'The Essentials': 295, 'The Signature': 345, 'The Elite': 427, 'The Wedding': 1500 };
+      const now = new Date();
+      const monthTotal = allAppointments
+        .filter(a => a.status !== 'cancelled' && a.status !== 'upcoming')
+        .filter(a => {
+          const d = new Date(a.isoDate + 'T00:00:00');
+          return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        })
+        .reduce((sum, a) => {
+          const p = parseInt(localStorage.getItem('price-' + a.package.replace('The ','').toLowerCase())) || PRICES[a.package] || 0;
+          return sum + p;
+        }, 0);
+
+      const invoices  = allAppointments.filter(a => a.status !== 'cancelled').length;
+      const pending   = allAppointments.filter(a => a.status === 'upcoming').length;
+      const pendingAmt = allAppointments
+        .filter(a => a.status === 'upcoming')
+        .reduce((sum, a) => {
+          const p = parseInt(localStorage.getItem('price-' + a.package.replace('The ','').toLowerCase())) || PRICES[a.package] || 0;
+          return sum + p;
+        }, 0);
+
+      const statNums = document.querySelectorAll('.dash-stat-num');
+      if (statNums[0]) statNums[0].textContent = '$' + monthTotal.toLocaleString();
+      if (statNums[1]) statNums[1].textContent = invoices;
+      if (statNums[2]) statNums[2].textContent = '$' + pendingAmt.toLocaleString();
+
+      // Update center labels
+      const collected = allAppointments
+        .filter(a => a.status === 'delivered' || a.status === 'completed')
+        .reduce((sum, a) => {
+          const p = parseInt(localStorage.getItem('price-' + a.package.replace('The ','').toLowerCase())) || PRICES[a.package] || 0;
+          return sum + p;
+        }, 0);
+      const chartPaymentsLabel = document.getElementById('chartPaymentsLabel');
+      if (chartPaymentsLabel) {
+        chartPaymentsLabel.querySelector('.chart-center-num').textContent = '$' + collected.toLocaleString();
+      }
+    }
+
+    // Session types center count
+    function updateTypesCenterLabel() {
+      const total = allAppointments.filter(a => a.status !== 'cancelled').length;
+      const el = document.getElementById('chartTypesLabel');
+      if (el) {
+        el.querySelector('.chart-center-num').textContent = total;
+      }
+    }
+
+    const typesSlices    = buildTypesSlices();
+    const paymentSlices  = buildPaymentSlices();
+
+    // Tooltip callback for Session Types chart
+    function typesHoverCallback(slice) {
+      const pkg = slice.label;
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const next = allAppointments
+        .filter(a => a.package === pkg && a.status === 'upcoming' && new Date(a.isoDate + 'T00:00:00') >= today)
+        .sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))[0];
+
+      const count = allAppointments.filter(a => a.package === pkg && a.status !== 'cancelled').length;
+
+      if (next) {
+        return `<div class="pie-tt-pkg" style="color:${slice.color}">${pkg}</div>
+                <div class="pie-tt-row"><span class="pie-tt-label">Next up</span><span class="pie-tt-val">${next.name}</span></div>
+                <div class="pie-tt-row"><span class="pie-tt-label">Date</span><span class="pie-tt-val">${fmtDate(next.isoDate)}</span></div>
+                <div class="pie-tt-row"><span class="pie-tt-label">Time</span><span class="pie-tt-val">${next.time}</span></div>
+                <div class="pie-tt-divider"></div>
+                <div class="pie-tt-row"><span class="pie-tt-label">Total booked</span><span class="pie-tt-val">${count}</span></div>`;
+      } else {
+        return `<div class="pie-tt-pkg" style="color:${slice.color}">${pkg}</div>
+                <div class="pie-tt-row"><span class="pie-tt-label">No upcoming sessions</span></div>
+                <div class="pie-tt-divider"></div>
+                <div class="pie-tt-row"><span class="pie-tt-label">Total booked</span><span class="pie-tt-val">${count}</span></div>`;
+      }
+    }
+
+    // Tooltip callback for Payment Status chart
+    const PRICES = { 'The Essentials': 295, 'The Signature': 345, 'The Elite': 427, 'The Wedding': 1500 };
+    const STATUS_LABEL_MAP = {
+      'Delivered': ['delivered'],
+      'Upcoming':  ['upcoming'],
+      'Completed': ['completed'],
+      'Cancelled': ['cancelled'],
+    };
+    const MONEY_LABEL = {
+      'Delivered': 'Received',
+      'Upcoming':  'Outstanding',
+      'Completed': 'Received',
+      'Cancelled': 'Forfeited',
+    };
+
+    function paymentsHoverCallback(slice) {
+      const statuses = STATUS_LABEL_MAP[slice.label] || [];
+      const matching = allAppointments.filter(a => statuses.includes(a.status));
+      const total    = matching.length;
+
+      const moneyTotal = matching.reduce((sum, a) => {
+        const p = parseInt(localStorage.getItem('price-' + a.package.replace('The ','').toLowerCase())) || PRICES[a.package] || 0;
+        return sum + p;
+      }, 0);
+      const moneyLabel = MONEY_LABEL[slice.label] || 'Total';
+
+      // Most recent (for past) or next upcoming (for future)
+      const today = new Date(); today.setHours(0,0,0,0);
+      let featured;
+      if (slice.label === 'Upcoming') {
+        featured = matching
+          .filter(a => new Date(a.isoDate + 'T00:00:00') >= today)
+          .sort((a,b) => new Date(a.isoDate) - new Date(b.isoDate))[0];
+      } else {
+        featured = matching
+          .sort((a,b) => new Date(b.isoDate) - new Date(a.isoDate))[0];
+      }
+
+      const featuredLabel = slice.label === 'Upcoming' ? 'Next up' : 'Most recent';
+
+      return `<div class="pie-tt-pkg" style="color:${slice.color}">${slice.label}</div>
+              <div class="pie-tt-row"><span class="pie-tt-label">Sessions</span><span class="pie-tt-val">${total}</span></div>
+              <div class="pie-tt-row"><span class="pie-tt-label">${moneyLabel}</span><span class="pie-tt-val">$${moneyTotal.toLocaleString()}</span></div>
+              ${featured ? `<div class="pie-tt-divider"></div>
+              <div class="pie-tt-row"><span class="pie-tt-label">${featuredLabel}</span><span class="pie-tt-val">${featured.name}</span></div>
+              <div class="pie-tt-row"><span class="pie-tt-label">Date</span><span class="pie-tt-val">${fmtDate(featured.isoDate)}</span></div>` : ''}`;
+    }
+
+    drawPie('chartTypes', 'legendTypes', typesSlices.length ? typesSlices : [
+      { label: 'No data', value: 1, color: 'rgba(245,240,235,0.15)' }
+    ], typesHoverCallback);
+    updateTypesCenterLabel();
+
+    drawPie('chartPayments', 'legendPayments', paymentSlices, paymentsHoverCallback);
+    updatePaymentStats();
+
+    // Tooltip callback for Inquiry Types chart
+    function inquiriesHoverCallback(slice) {
+      const matching = messages.filter(m => m.tag === slice.label);
+      const count    = matching.length;
+      const senders  = matching.map(m => m.name);
+
+      return `<div class="pie-tt-pkg" style="color:${slice.color}">${slice.label}</div>
+              <div class="pie-tt-row"><span class="pie-tt-label">Messages</span><span class="pie-tt-val">${count}</span></div>
+              ${senders.length ? `<div class="pie-tt-divider"></div>
+              ${senders.map(n => `<div class="pie-tt-row"><span class="pie-tt-label">From</span><span class="pie-tt-val">${n}</span></div>`).join('')}` : ''}`;
+    }
+
+    drawPie('chartInquiries', 'legendInquiries', [
+      { label: 'Reschedule',      value: 1, color: '#c8a97e' },
+      { label: 'Billing',         value: 1, color: '#7ec8c8' },
+      { label: 'Additional Info', value: 1, color: '#b89ec8' },
+    ], inquiriesHoverCallback);
+
+    // ── Appointment History ───────────────────────────────────
+    const STATUS_META = {
+      upcoming:   { label: 'Pending',    cls: 'status--pending'   },
+      completed:  { label: 'Completed',  cls: 'status--completed' },
+      delivered:  { label: 'Delivered',  cls: 'status--delivered' },
+      cancelled:  { label: 'Cancelled',  cls: 'status--cancelled' },
+    };
+
+    let activeFilter = 'all';
+
+    function renderHistoryTable(filter) {
+      const body  = document.getElementById('apptHistoryBody');
+      const empty = document.getElementById('apptHistoryEmpty');
+      const rows  = filter === 'all'
+        ? historyRecords
+        : historyRecords.filter(r => r.status === filter);
+
+      if (rows.length === 0) {
+        body.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      body.innerHTML = rows.map((r, idx) => {
+        const sm = STATUS_META[r.status] || { label: r.status, cls: 'status--pending' };
+        const dateStr = fmtDate(r.isoDate);
+
+        // Extra details row (email, phone, session type, notes) — shown on click
+        const hasDetails = r.email || r.phone || r.sessionType || r.notes;
+        const expandId   = 'appt-expand-' + idx;
+        const detailsRow = hasDetails ? `
+        <tr class="appt-expand-row" id="${expandId}" style="display:none;">
+          <td colspan="5">
+            <div class="appt-expand-inner">
+              ${r.email      ? `<div class="appt-detail-item"><span class="appt-detail-key">Email</span><a href="mailto:${r.email}" class="appt-detail-val appt-detail-link">${r.email}</a></div>` : ''}
+              ${r.phone && r.phone !== '—' ? `<div class="appt-detail-item"><span class="appt-detail-key">Phone</span><a href="tel:${r.phone}" class="appt-detail-val appt-detail-link">${r.phone}</a></div>` : ''}
+              ${r.sessionType ? `<div class="appt-detail-item"><span class="appt-detail-key">Session Type</span><span class="appt-detail-val">${r.sessionType}</span></div>` : ''}
+              ${r.ref         ? `<div class="appt-detail-item"><span class="appt-detail-key">Ref #</span><span class="appt-detail-val">${r.ref}</span></div>` : ''}
+              ${r.notes && r.notes !== '—' ? `<div class="appt-detail-item appt-detail-notes"><span class="appt-detail-key">Notes</span><span class="appt-detail-val">${r.notes}</span></div>` : ''}
+            </div>
+          </td>
+        </tr>` : '';
+
+        return `<tr class="appt-history-row${hasDetails ? ' appt-expandable' : ''}" data-status="${r.status}" ${hasDetails ? `onclick="toggleApptExpand('${expandId}', this)"` : ''}>
+          <td>
+            <div class="appt-client-cell">
+              <div class="appt-avatar">${r.initials}</div>
+              <div>
+                <span class="appt-client-name">${r.name}</span>
+                ${hasDetails ? `<div class="appt-expand-hint">tap for details</div>` : ''}
+              </div>
+            </div>
+          </td>
+          <td><span class="appt-pkg-badge">${r.package}</span></td>
+          <td>
+            <div class="appt-date-cell">
+              <span class="appt-date">${dateStr}</span>
+              <span class="appt-time">${r.time}</span>
+            </div>
+          </td>
+          <td><span class="appt-location">${r.location}</span></td>
+          <td><span class="appt-status-badge ${sm.cls}">${sm.label}</span></td>
+        </tr>${detailsRow}`;
+      }).join('');
+    }
+
+    function toggleApptExpand(expandId, row) {
+      const expandRow = document.getElementById(expandId);
+      if (!expandRow) return;
+      const isOpen = expandRow.style.display !== 'none';
+      expandRow.style.display = isOpen ? 'none' : 'table-row';
+      row.classList.toggle('appt-row-open', !isOpen);
+    }
+
+    function filterHistory(filter, btn) {
+      activeFilter = filter;
+      document.querySelectorAll('.appt-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderHistoryTable(filter);
+    }
+
+    renderHistoryTable('all');
+
+    // ── Availability Manager ──────────────────────────────────
+    const AVAIL_SLOTS = ['9:00 AM','10:00 AM','11:00 AM','12:00 PM',
+                         '1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM'];
+
+    // State for the modal
+    let availYear  = 2026;
+    let availMonth = 3; // April
+    let availSelectedIso = null; // "YYYY-MM-DD"
+
+    // Helpers — read / write localStorage
+    function getBlockedDates() {
+      try { return JSON.parse(localStorage.getItem('blockedDates') || '[]'); } catch(e) { return []; }
+    }
+    function getBlockedTimes() {
+      try { return JSON.parse(localStorage.getItem('blockedTimes') || '{}'); } catch(e) { return {}; }
+    }
+    function saveBlockedDates(arr) { localStorage.setItem('blockedDates', JSON.stringify(arr)); }
+    function saveBlockedTimes(obj) { localStorage.setItem('blockedTimes', JSON.stringify(obj)); }
+
+    function toIso(year, month, day) {
+      return year + '-' + String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    }
+
+    // Open / close
+    function openAvail() {
+      availSelectedIso = null;
+      renderAvailCal();
+      document.getElementById('availDatePanel').classList.remove('visible');
+      document.getElementById('availNoDateHint').style.display = 'block';
+      document.getElementById('availBackdrop').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeAvail() {
+      document.getElementById('availBackdrop').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function closeAvailBackdrop(e) {
+      if (e.target === document.getElementById('availBackdrop')) closeAvail();
+    }
+
+    // Render the mini calendar inside the modal
+    function renderAvailCal() {
+      const MONTH_NAMES = ['January','February','March','April','May','June',
+                           'July','August','September','October','November','December'];
+      const DAY_NAMES   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+      document.getElementById('availCalLabel').textContent = MONTH_NAMES[availMonth] + ' ' + availYear;
+
+      const blockedDates = getBlockedDates();
+      const blockedTimes = getBlockedTimes();
+      const today        = new Date();
+      const firstDay     = new Date(availYear, availMonth, 1).getDay();
+      const daysInMonth  = new Date(availYear, availMonth + 1, 0).getDate();
+
+      let html = DAY_NAMES.map(d => `<div class="avail-cal-dname">${d}</div>`).join('');
+
+      for (let i = 0; i < firstDay; i++) {
+        html += `<div class="avail-cal-cell empty"></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso     = toIso(availYear, availMonth, d);
+        const isPast  = new Date(availYear, availMonth, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const isToday = today.getFullYear() === availYear && today.getMonth() === availMonth && today.getDate() === d;
+        const isBlockedFull  = blockedDates.includes(iso);
+        const hasSlotBlocks  = !isBlockedFull && blockedTimes[iso] && blockedTimes[iso].length > 0;
+        const isSelected     = availSelectedIso === iso;
+
+        let cls = 'avail-cal-cell';
+        if (isPast)          cls += ' past';
+        if (isToday)         cls += ' today';
+        if (isBlockedFull)   cls += ' blocked-full';
+        else if (hasSlotBlocks) cls += ' has-slots';
+        if (isSelected)      cls += ' selected-avail';
+
+        const badge = (isBlockedFull || hasSlotBlocks)
+          ? `<div class="avail-cal-badge"></div>` : '';
+
+        const clickAttr = (!isPast)
+          ? `onclick="availSelectDate('${iso}', ${d})"` : '';
+
+        html += `<div class="${cls}" ${clickAttr}>${d}${badge}</div>`;
+      }
+
+      document.getElementById('availCalGrid').innerHTML = html;
+    }
+
+    function availChangeMonth(dir) {
+      availMonth += dir;
+      if (availMonth > 11) { availMonth = 0; availYear++; }
+      if (availMonth < 0)  { availMonth = 11; availYear--; }
+      availSelectedIso = null;
+      renderAvailCal();
+      document.getElementById('availDatePanel').classList.remove('visible');
+      document.getElementById('availNoDateHint').style.display = 'block';
+    }
+
+    // When admin clicks a date in the modal calendar
+    function availSelectDate(iso, day) {
+      availSelectedIso = iso;
+      renderAvailCal(); // re-render to show selected highlight
+
+      const MONTH_NAMES = ['January','February','March','April','May','June',
+                           'July','August','September','October','November','December'];
+      const label = MONTH_NAMES[availMonth] + ' ' + day + ', ' + availYear;
+      document.getElementById('availDateLabel').textContent = 'Configure — ' + label;
+
+      const blockedDates = getBlockedDates();
+      const blockedTimes = getBlockedTimes();
+      const isFullBlocked = blockedDates.includes(iso);
+
+      // Set the "block entire day" toggle
+      document.getElementById('availBlockFull').checked = isFullBlocked;
+
+      // Build time-slot chips
+      const slotsSection = document.getElementById('availSlotsSection');
+      slotsSection.style.opacity = isFullBlocked ? '0.35' : '1';
+      slotsSection.style.pointerEvents = isFullBlocked ? 'none' : '';
+
+      const blockedForDay = blockedTimes[iso] || [];
+      const grid = document.getElementById('availSlotsGrid');
+      grid.innerHTML = AVAIL_SLOTS.map(slot => {
+        const isBlockedSlot = blockedForDay.includes(slot);
+        return `<button class="avail-slot-chip${isBlockedSlot ? ' blocked-slot' : ''}"
+          onclick="toggleSlot('${slot}')" type="button">${slot}</button>`;
+      }).join('');
+
+      document.getElementById('availNoDateHint').style.display = 'none';
+      document.getElementById('availDatePanel').classList.add('visible');
+
+      // Clear saved banner
+      const msg = document.getElementById('availSavedMsg');
+      msg.classList.remove('show');
+    }
+
+    // Toggle block-entire-day checkbox
+    function onBlockFullToggle() {
+      const isChecked = document.getElementById('availBlockFull').checked;
+      const slotsSection = document.getElementById('availSlotsSection');
+      slotsSection.style.opacity = isChecked ? '0.35' : '1';
+      slotsSection.style.pointerEvents = isChecked ? 'none' : '';
+    }
+
+    // Toggle an individual time slot chip
+    function toggleSlot(slot) {
+      if (!availSelectedIso) return;
+      const blockedTimes = getBlockedTimes();
+      const arr = blockedTimes[availSelectedIso] || [];
+      const idx = arr.indexOf(slot);
+      if (idx === -1) arr.push(slot); else arr.splice(idx, 1);
+      if (arr.length === 0) {
+        delete blockedTimes[availSelectedIso];
+      } else {
+        blockedTimes[availSelectedIso] = arr;
+      }
+      saveBlockedTimes(blockedTimes);
+
+      // Re-render chips
+      const grid = document.getElementById('availSlotsGrid');
+      const updated = blockedTimes[availSelectedIso] || [];
+      grid.innerHTML = AVAIL_SLOTS.map(s => {
+        const blocked = updated.includes(s);
+        return `<button class="avail-slot-chip${blocked ? ' blocked-slot' : ''}"
+          onclick="toggleSlot('${s}')" type="button">${s}</button>`;
+      }).join('');
+
+      renderAvailCal();
+    }
+
+    // Save button — commit blocked-full toggle + show confirmation
+    function saveAvailability() {
+      if (!availSelectedIso) return;
+      const isFullBlocked = document.getElementById('availBlockFull').checked;
+      const blockedDates  = getBlockedDates();
+      const blockedTimes  = getBlockedTimes();
+
+      if (isFullBlocked) {
+        if (!blockedDates.includes(availSelectedIso)) blockedDates.push(availSelectedIso);
+        // Clear individual slot blocks for this date since whole day is blocked
+        delete blockedTimes[availSelectedIso];
+        saveBlockedTimes(blockedTimes);
+      } else {
+        const idx = blockedDates.indexOf(availSelectedIso);
+        if (idx !== -1) blockedDates.splice(idx, 1);
+      }
+      saveBlockedDates(blockedDates);
+      renderAvailCal();
+      renderDashCal(); // refresh main dashboard calendar too
+
+      const msg = document.getElementById('availSavedMsg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2400);
+    }
+
+    // Clear all config for the selected date
+    function clearDateConfig() {
+      if (!availSelectedIso) return;
+      const blockedDates = getBlockedDates();
+      const blockedTimes = getBlockedTimes();
+      const idx = blockedDates.indexOf(availSelectedIso);
+      if (idx !== -1) blockedDates.splice(idx, 1);
+      delete blockedTimes[availSelectedIso];
+      saveBlockedDates(blockedDates);
+      saveBlockedTimes(blockedTimes);
+
+      // Reset UI
+      document.getElementById('availBlockFull').checked = false;
+      const slotsSection = document.getElementById('availSlotsSection');
+      slotsSection.style.opacity = '1';
+      slotsSection.style.pointerEvents = '';
+      const grid = document.getElementById('availSlotsGrid');
+      grid.innerHTML = AVAIL_SLOTS.map(s =>
+        `<button class="avail-slot-chip" onclick="toggleSlot('${s}')" type="button">${s}</button>`
+      ).join('');
+      renderAvailCal();
+
+      const msg = document.getElementById('availSavedMsg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2400);
+    }
+
+    // ESC closes availability modal too
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeAvail();
+        document.getElementById('msgModalBackdrop').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
