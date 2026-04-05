@@ -138,40 +138,8 @@
           <div class="section-label">Inbox</div>
           <h2 class="dash-block-title">Messages</h2>
         </div>
-        <ul class="msg-list" id="msgList">
-          <li class="msg-row" onclick="openMsg(0)">
-            <div class="msg-avatar">ND</div>
-            <div class="msg-body">
-              <div class="msg-top">
-                <span class="msg-name">Nia Davis</span>
-                <span class="msg-tag msg-tag--reschedule">Reschedule</span>
-              </div>
-              <p class="msg-preview">Hey Jalen, something came up — can we push the shoot back a week?</p>
-            </div>
-            <span class="msg-unread"></span>
-          </li>
-          <li class="msg-row" onclick="openMsg(1)">
-            <div class="msg-avatar">JR</div>
-            <div class="msg-body">
-              <div class="msg-top">
-                <span class="msg-name">Jordan Reid</span>
-                <span class="msg-tag msg-tag--billing">Billing</span>
-              </div>
-              <p class="msg-preview">I sent the deposit last Thursday — just wanted to confirm you received it.</p>
-            </div>
-          </li>
-          <li class="msg-row" onclick="openMsg(2)">
-            <div class="msg-avatar">CM</div>
-            <div class="msg-body">
-              <div class="msg-top">
-                <span class="msg-name">Camille Monroe</span>
-                <span class="msg-tag msg-tag--info">Additional Info</span>
-              </div>
-              <p class="msg-preview">Quick question about the turnaround time for the edited gallery photos.</p>
-            </div>
-          </li>
-        </ul>
-        <p class="dash-block-sub">3 unread messages</p>
+        <ul class="msg-list" id="msgList"></ul>
+        <p class="dash-block-sub" id="unreadCountLabel">Loading…</p>
       </div>
 
     </div>
@@ -572,8 +540,13 @@
     let dashYear = 2026, dashMonth = 3; // April = index 3
 
     function apptDaysInMonth(year, month) {
-      return appointments
-        .filter(a => { const d = new Date(a.isoDate); return d.getFullYear() === year && d.getMonth() === month; })
+      // Show dots for ALL booked sessions (upcoming, completed, delivered — not cancelled)
+      return allAppointments
+        .filter(a => {
+          if (a.status === 'cancelled') return false;
+          const d = new Date(a.isoDate);
+          return d.getFullYear() === year && d.getMonth() === month;
+        })
         .map(a => new Date(a.isoDate).getDate());
     }
 
@@ -632,8 +605,9 @@
     renderDashCal();
 
     // Messages
-    const messages = [
+    const SEED_MESSAGES = [
       {
+        id:       'msg-0',
         initials: 'ND',
         name:     'Nia Davis',
         tag:      'Reschedule',
@@ -644,6 +618,7 @@
         phone:    '8325550141'
       },
       {
+        id:       'msg-1',
         initials: 'JR',
         name:     'Jordan Reid',
         tag:      'Billing',
@@ -654,6 +629,7 @@
         phone:    '7135550289'
       },
       {
+        id:       'msg-2',
         initials: 'CM',
         name:     'Camille Monroe',
         tag:      'Additional Info',
@@ -664,6 +640,77 @@
         phone:    '2815550374'
       }
     ];
+
+    // Merge contact-form submissions (newest first, then seeds)
+    function loadAllMessages() {
+      try {
+        const submitted = JSON.parse(localStorage.getItem('contactMessages') || '[]');
+        // Avoid duplicates if page is refreshed
+        const seedIds = new Set(SEED_MESSAGES.map(m => m.id));
+        const fresh   = submitted.filter(m => !seedIds.has(m.id));
+        return [...fresh, ...SEED_MESSAGES];
+      } catch(e) { return [...SEED_MESSAGES]; }
+    }
+
+    let messages = loadAllMessages();
+
+    // ── Render message list ───────────────────────────────────
+    function renderMsgList() {
+      const list = document.getElementById('msgList');
+      list.innerHTML = messages.map((m, i) => `
+        <li class="msg-row" id="msg-row-${i}" onclick="openMsg(${i})">
+          <div class="msg-avatar">${m.initials}</div>
+          <div class="msg-body">
+            <div class="msg-top">
+              <span class="msg-name">${m.name}</span>
+              <span class="msg-tag ${m.tagClass}">${m.tag}</span>
+            </div>
+            <p class="msg-preview">${m.body.length > 80 ? m.body.slice(0, 80) + '…' : m.body}</p>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    renderMsgList();
+
+    // ── Unread state (persisted in localStorage) ─────────────
+    function loadReadSet() {
+      try { return new Set(JSON.parse(localStorage.getItem('readMsgs') || '[]')); }
+      catch(e) { return new Set(); }
+    }
+    function saveReadSet(set) {
+      localStorage.setItem('readMsgs', JSON.stringify([...set]));
+    }
+
+    let readSet = loadReadSet();
+
+    function updateUnreadUI() {
+      messages.forEach((m, i) => {
+        const row = document.getElementById('msg-row-' + i);
+        if (!row) return;
+        const isUnread = !readSet.has(m.id);
+        row.classList.toggle('msg-row--unread', isUnread);
+        let dot = row.querySelector('.msg-unread');
+        if (isUnread && !dot) {
+          dot = document.createElement('span');
+          dot.className = 'msg-unread';
+          row.appendChild(dot);
+        } else if (!isUnread && dot) {
+          dot.remove();
+        }
+      });
+      const unreadCount = messages.filter(m => !readSet.has(m.id)).length;
+      const label = document.getElementById('unreadCountLabel');
+      if (label) {
+        label.textContent = unreadCount === 0
+          ? 'All messages read'
+          : unreadCount === 1
+            ? '1 unread message'
+            : unreadCount + ' unread messages';
+      }
+    }
+
+    updateUnreadUI();
 
     function openMsg(i) {
       const m = messages[i];
@@ -676,9 +723,9 @@
       tag.className   = 'msg-modal-tag ' + m.tagClass;
       document.getElementById('mmEmail').onclick = () => { window.location.href = 'mailto:' + m.email; };
       document.getElementById('mmCall').onclick  = () => { window.location.href = 'tel:' + m.phone; };
-      // Mark row as read
-      const dot = document.querySelectorAll('.msg-row')[i].querySelector('.msg-unread');
-      if (dot) dot.remove();
+      readSet.add(m.id);
+      saveReadSet(readSet);
+      updateUnreadUI();
       document.getElementById('msgModalBackdrop').classList.add('open');
       document.body.style.overflow = 'hidden';
     }
