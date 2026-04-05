@@ -33,7 +33,6 @@
       overflow-x: hidden;
     }
 
-    /* CURSOR */
     .cursor-dot, .cursor-ring {
       position: fixed; top: 0; left: 0;
       pointer-events: none; z-index: 9999; border-radius: 50%;
@@ -47,7 +46,6 @@
     }
     .cursor-ring.hovering { width: 52px; height: 52px; border-color: var(--warm); }
 
-    /* NAV */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 900;
       display: flex; align-items: center; justify-content: space-between;
@@ -80,14 +78,10 @@
     }
     .nav-cta:hover { opacity: .82; }
 
-    /* HERO — text only, no photo */
+    /* HERO — simple, no stats */
     .hero {
       padding: 140px 60px 60px;
       background: var(--ink);
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: flex-end;
-      gap: 40px;
     }
     .hero-eyebrow {
       font-family: 'Barlow Condensed', sans-serif;
@@ -104,21 +98,7 @@
     .hero-sub {
       margin-top: 20px;
       font-size: .88rem; color: var(--dust);
-      letter-spacing: .04em; max-width: 360px;
-    }
-    .hero-stats {
-      display: flex; flex-direction: column; gap: 24px;
-      border-left: 1px solid var(--rule);
-      padding-left: 36px; min-width: 140px;
-    }
-    .hero-stat-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.2rem; font-weight: 700; color: var(--warm); line-height: 1;
-    }
-    .hero-stat-lbl {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: .68rem; letter-spacing: .2em; text-transform: uppercase;
-      color: var(--dust); margin-top: 3px;
+      letter-spacing: .04em; max-width: 480px;
     }
 
     /* ISSUE BAR */
@@ -150,7 +130,7 @@
     /* FILTER */
     .filter-row {
       padding: 40px 60px 0;
-      display: flex; align-items: center; gap: 6px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
     .ftab {
       font-family: 'Barlow Condensed', sans-serif;
@@ -205,6 +185,19 @@
       gap: 4px;
     }
 
+    .spread-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .spread-4 {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1.2fr;
+      gap: 4px;
+    }
+
     /* PHOTO BLOCKS */
     .photo-block {
       position: relative; overflow: hidden; cursor: none;
@@ -220,6 +213,8 @@
     .s1-top  { height: 330px; }
     .s1-bot  { height: 346px; }
     .spread-2 .photo-block { height: 480px; }
+    .spread-3 .photo-block { height: 400px; }
+    .spread-4 .photo-block { height: 460px; }
 
     .photo-label {
       position: absolute; bottom: 0; left: 0; right: 0;
@@ -345,7 +340,7 @@
     }
     .lb-thumbs {
       position: absolute; bottom: 40px; right: 36px;
-      display: flex; gap: 8px;
+      display: flex; gap: 8px; flex-wrap: wrap; max-width: 400px; justify-content: flex-end;
     }
     .lb-thumb {
       width: 52px; height: 40px; object-fit: cover; cursor: none;
@@ -360,15 +355,14 @@
 
     @media (max-width: 900px) {
       nav { padding: 0 24px; }
-      .hero { padding: 120px 24px 48px; grid-template-columns: 1fr; }
-      .hero-stats { flex-direction: row; border-left: none; border-top: 1px solid var(--rule); padding: 20px 0 0; }
+      .hero { padding: 120px 24px 48px; }
       .issue-bar, .filter-row, .editorial { padding-left: 24px; padding-right: 24px; }
       .spread-1 { grid-template-columns: 1fr; }
       .s1-main { height: 440px; grid-row: 1; }
       .s1-top { height: 280px; }
       .s1-bot { height: 280px; }
-      .spread-2 { grid-template-columns: 1fr; }
-      .spread-2 .photo-block { height: 340px; }
+      .spread-2, .spread-3, .spread-4 { grid-template-columns: 1fr; }
+      .spread-2 .photo-block, .spread-3 .photo-block, .spread-4 .photo-block { height: 340px; }
       .cta-strip { margin: 0 24px 60px; padding: 36px 28px; flex-direction: column; align-items: flex-start; }
     }
   </style>
@@ -390,27 +384,11 @@
     <a href="calendar.html" class="nav-cta">Book a Session</a>
   </nav>
 
-  <!-- HERO — text only -->
+  <!-- HERO — clean, no stats -->
   <div class="hero">
-    <div>
-      <div class="hero-eyebrow">Portfolio · Selected Works · Houston TX</div>
-      <h1 class="hero-title">The<br><em>Gallery</em></h1>
-      <p class="hero-sub">A curated selection of portraits, graduation sessions, and lifestyle shoots by JayxCreatez Productions.</p>
-    </div>
-    <div class="hero-stats">
-      <div>
-        <div class="hero-stat-num">05</div>
-        <div class="hero-stat-lbl">Images</div>
-      </div>
-      <div>
-        <div class="hero-stat-num">03</div>
-        <div class="hero-stat-lbl">Categories</div>
-      </div>
-      <div>
-        <div class="hero-stat-num">2023—</div>
-        <div class="hero-stat-lbl">Active</div>
-      </div>
-    </div>
+    <div class="hero-eyebrow">Portfolio · Selected Works · Houston TX</div>
+    <h1 class="hero-title">The<br><em>Gallery</em></h1>
+    <p class="hero-sub">A curated selection of portraits, graduation sessions, sports, and lifestyle shoots by JayxCreatez Productions.</p>
   </div>
 
   <!-- ISSUE BAR -->
@@ -420,14 +398,16 @@
       <span class="accent">★</span>
       <span>Portrait</span><span class="accent">·</span>
       <span>Graduation</span><span class="accent">·</span>
+      <span>Sports</span><span class="accent">·</span>
       <span>Lifestyle</span><span class="accent">·</span>
-      <span>Editorial</span><span class="accent">·</span>
+      <span>Events</span><span class="accent">·</span>
       <span>Houston TX</span><span class="accent">·</span>
       <span>2023 — Present</span><span class="accent">★</span>
       <span>Portrait</span><span class="accent">·</span>
       <span>Graduation</span><span class="accent">·</span>
+      <span>Sports</span><span class="accent">·</span>
       <span>Lifestyle</span><span class="accent">·</span>
-      <span>Editorial</span><span class="accent">·</span>
+      <span>Events</span><span class="accent">·</span>
       <span>Houston TX</span><span class="accent">·</span>
       <span>2023 — Present</span>
     </div>
@@ -438,14 +418,15 @@
     <button class="ftab active" data-filter="all">All Work</button>
     <button class="ftab" data-filter="portrait">Portraits</button>
     <button class="ftab" data-filter="graduation">Graduation</button>
+    <button class="ftab" data-filter="sports">Sports</button>
     <button class="ftab" data-filter="lifestyle">Lifestyle</button>
-    <span class="filter-count" id="filterCount">5 images</span>
+    <span class="filter-count" id="filterCount">9 images</span>
   </div>
 
   <!-- EDITORIAL SPREADS -->
   <div class="editorial">
 
-    <!-- SPREAD 1 -->
+    <!-- SPREAD 1: big left + two stacked right -->
     <div class="spread-1">
       <div class="photo-block s1-main reveal" data-category="graduation" onclick="openLightbox(2)">
         <div class="photo-num">01</div>
@@ -454,9 +435,7 @@
           <div class="photo-label-cat">Graduation · 2023</div>
           <div class="photo-label-title">Golden Hour —<br>Class of 2023</div>
           <div class="photo-label-arrow">
-            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-              <path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
           </div>
         </div>
       </div>
@@ -468,9 +447,7 @@
           <div class="photo-label-cat">Portrait · Editorial</div>
           <div class="photo-label-title">Written in History</div>
           <div class="photo-label-arrow">
-            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-              <path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
           </div>
         </div>
       </div>
@@ -482,9 +459,7 @@
           <div class="photo-label-cat">Portrait · Lifestyle</div>
           <div class="photo-label-title">City Standards</div>
           <div class="photo-label-arrow">
-            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-              <path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
           </div>
         </div>
       </div>
@@ -497,7 +472,7 @@
       <span class="spread-rule-issue">More from the collection</span>
     </div>
 
-    <!-- SPREAD 2 -->
+    <!-- SPREAD 2: three col, center widest -->
     <div class="spread-2">
       <div class="photo-block reveal" data-category="graduation" onclick="openLightbox(0)">
         <div class="photo-num">04</div>
@@ -506,41 +481,116 @@
           <div class="photo-label-cat">Graduation</div>
           <div class="photo-label-title">The Final Chapter</div>
           <div class="photo-label-arrow">
-            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-              <path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
           </div>
         </div>
       </div>
 
-      <div class="photo-block reveal" data-category="graduation" onclick="openLightbox(2)">
-        <div class="photo-num">— Feature —</div>
-        <img src="IMG_4047.jpeg" alt="Golden Hour" style="object-position:top;" />
+      <div class="photo-block reveal" data-category="graduation" onclick="openLightbox(6)">
+        <div class="photo-num">05</div>
+        <img src="IMG_4087.jpg" alt="Phi Beta Sigma" style="object-position:top;" />
         <div class="photo-label">
-          <div class="photo-label-cat">Graduation · 2023</div>
-          <div class="photo-label-title">Golden Hour</div>
+          <div class="photo-label-cat">Graduation · Night</div>
+          <div class="photo-label-title">Brotherhood &<br>Achievement</div>
           <div class="photo-label-arrow">
-            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-              <path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
           </div>
         </div>
       </div>
 
       <div class="photo-block reveal" data-category="lifestyle" onclick="openLightbox(4)">
-        <div class="photo-num">05</div>
+        <div class="photo-num">06</div>
         <img src="IMG_4049.jpeg" alt="Suited Up" />
         <div class="photo-label">
           <div class="photo-label-cat">Lifestyle</div>
           <div class="photo-label-title">Suited Up</div>
           <div class="photo-label-arrow">
-            <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-              <path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- SPREAD DIVIDER 2 -->
+    <div class="spread-rule">
+      <span class="spread-rule-label">Vol. II</span>
+      <div class="spread-rule-line"></div>
+      <span class="spread-rule-issue">Sports & Portraits</span>
+    </div>
+
+    <!-- SPREAD 3: two col equal -->
+    <div class="spread-3">
+      <div class="photo-block reveal" data-category="sports" onclick="openLightbox(8)">
+        <div class="photo-num">07</div>
+        <img src="IMG_4084.jpg" alt="Game Day Energy" />
+        <div class="photo-label">
+          <div class="photo-label-cat">Sports · Football</div>
+          <div class="photo-label-title">Game Day Energy</div>
+          <div class="photo-label-arrow">
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="photo-block reveal" data-category="graduation" onclick="openLightbox(7)">
+        <div class="photo-num">08</div>
+        <img src="IMG_4086.jpg" alt="Cap & Gown" />
+        <div class="photo-label">
+          <div class="photo-label-cat">Graduation · Portrait</div>
+          <div class="photo-label-title">Cap & Gown</div>
+          <div class="photo-label-arrow">
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPREAD DIVIDER 3 -->
+    <div class="spread-rule">
+      <span class="spread-rule-label">Vol. III</span>
+      <div class="spread-rule-line"></div>
+      <span class="spread-rule-issue">Editorial & Lifestyle</span>
+    </div>
+
+    <!-- SPREAD 4: three col asymmetric -->
+    <div class="spread-4">
+      <div class="photo-block reveal" data-category="portrait" onclick="openLightbox(5)">
+        <div class="photo-num">— Feature —</div>
+        <img src="IMG_4085.jpg" alt="Moto Editorial" />
+        <div class="photo-label">
+          <div class="photo-label-cat">Portrait · Editorial</div>
+          <div class="photo-label-title">Moto Editorial</div>
+          <div class="photo-label-arrow">
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="photo-block reveal" data-category="graduation" onclick="openLightbox(2)">
+        <div class="photo-num">09</div>
+        <img src="IMG_4047.jpeg" alt="Golden Hour" style="object-position:top;" />
+        <div class="photo-label">
+          <div class="photo-label-cat">Graduation · 2023</div>
+          <div class="photo-label-title">Golden Hour</div>
+          <div class="photo-label-arrow">
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="photo-block reveal" data-category="lifestyle" onclick="openLightbox(4)">
+        <div class="photo-num">—</div>
+        <img src="IMG_4049.jpeg" alt="Suited Up" />
+        <div class="photo-label">
+          <div class="photo-label-cat">Lifestyle</div>
+          <div class="photo-label-title">Suited Up</div>
+          <div class="photo-label-arrow">
+            <svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5h10M5 1l5 4-5 4" stroke="var(--warm)" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- CTA -->
@@ -578,7 +628,7 @@
         </svg>
       </button>
       <div class="lb-info">
-        <div class="lb-counter" id="lbCounter">1 / 5</div>
+        <div class="lb-counter" id="lbCounter">1 / 9</div>
         <div class="lb-cat" id="lbCat"></div>
         <div class="lb-title" id="lbTitle"></div>
       </div>
@@ -603,13 +653,17 @@
       el.addEventListener('mouseleave',()=>cRing.classList.remove('hovering'));
     });
 
-    /* Photo data */
+    /* Photo data — 9 images */
     const photos = [
-      { src:'IMG_4045.jpeg', title:'The Final Chapter',           cat:'Graduation',          filter:'graduation' },
-      { src:'IMG_4046.jpeg', title:'Written in History',          cat:'Portrait · Editorial', filter:'portrait'   },
-      { src:'IMG_4047.jpeg', title:'Golden Hour — Class of 2023', cat:'Graduation · 2023',    filter:'graduation' },
-      { src:'IMG_4048.jpeg', title:'City Standards',              cat:'Portrait · Lifestyle', filter:'portrait'   },
-      { src:'IMG_4049.jpeg', title:'Suited Up',                   cat:'Lifestyle',            filter:'lifestyle'  },
+      { src:'IMG_4045.jpeg', title:'The Final Chapter',           cat:'Graduation',            filter:'graduation' },
+      { src:'IMG_4046.jpeg', title:'Written in History',          cat:'Portrait · Editorial',   filter:'portrait'   },
+      { src:'IMG_4047.jpeg', title:'Golden Hour — Class of 2023', cat:'Graduation · 2023',      filter:'graduation' },
+      { src:'IMG_4048.jpeg', title:'City Standards',              cat:'Portrait · Lifestyle',   filter:'portrait'   },
+      { src:'IMG_4049.jpeg', title:'Suited Up',                   cat:'Lifestyle',              filter:'lifestyle'  },
+      { src:'IMG_4085.jpg',  title:'Moto Editorial',              cat:'Portrait · Editorial',   filter:'portrait'   },
+      { src:'IMG_4087.jpg',  title:'Brotherhood & Achievement',   cat:'Graduation · Night',     filter:'graduation' },
+      { src:'IMG_4086.jpg',  title:'Cap & Gown',                  cat:'Graduation · Portrait',  filter:'graduation' },
+      { src:'IMG_4084.jpg',  title:'Game Day Energy',             cat:'Sports · Football',      filter:'sports'     },
     ];
 
     /* Thumbnails */
