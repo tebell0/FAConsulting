@@ -24,7 +24,7 @@
       <li><a href="gallery.html" class="active">Gallery</a></li>
       <li><a href="calendar.html">Book</a></li>
       <li><a href="index.html#about">About</a></li>
-      <li><a href="contact.html">Contact</a></li>
+      <li><a href="ContactMe.html">Contact</a></li>
     </ul>
     <a href="calendar.html" class="nav-cta">Book a Session</a>
   </nav>
@@ -40,11 +40,11 @@
       <h1 class="hero-title">The <em>Gallery</em></h1>
       <div class="hero-meta">
         <div class="hero-meta-item">
-          <span class="hero-meta-num">5</span>
+          <span class="hero-meta-num">9</span>
           <span class="hero-meta-label">Images</span>
         </div>
         <div class="hero-meta-item">
-          <span class="hero-meta-num">3</span>
+          <span class="hero-meta-num">4</span>
           <span class="hero-meta-label">Categories</span>
         </div>
         <div class="hero-meta-item">
@@ -62,8 +62,9 @@
       <button class="filter-tab" data-filter="portrait">Portraits</button>
       <button class="filter-tab" data-filter="graduation">Graduation</button>
       <button class="filter-tab" data-filter="lifestyle">Lifestyle</button>
+      <button class="filter-tab" data-filter="sports">Sports</button>
     </div>
-    <span class="filter-count" id="filterCount">5 images</span>
+    <span class="filter-count" id="filterCount">9 images</span>
   </div>
 
   <!-- FEATURED: 2 large side-by-side -->
@@ -185,6 +186,68 @@
         </div>
       </div>
 
+      <!-- NEW IMAGES ADDED BELOW -->
+
+      <div class="grid-item reveal" data-category="graduation" onclick="openLightbox(6)">
+        <img src="IMG_4087.jpg" alt="Blue and Gold After Dark" />
+        <div class="grid-overlay">
+          <div class="grid-zoom">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M1 12L12 1M12 1H1M12 1v11" stroke="var(--warm)" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="grid-info">
+          <div class="grid-info-cat">Graduation · Night</div>
+          <div class="grid-info-title">Blue & Gold After Dark</div>
+        </div>
+      </div>
+
+      <div class="grid-item reveal" data-category="graduation" onclick="openLightbox(7)">
+        <img src="IMG_4086.jpg" alt="Reflections" />
+        <div class="grid-overlay">
+          <div class="grid-zoom">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M1 12L12 1M12 1H1M12 1v11" stroke="var(--warm)" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="grid-info">
+          <div class="grid-info-cat">Graduation · UH</div>
+          <div class="grid-info-title">Reflections</div>
+        </div>
+      </div>
+
+      <div class="grid-item reveal" data-category="portrait" onclick="openLightbox(8)">
+        <img src="IMG_4085.jpg" alt="Ride or Die" />
+        <div class="grid-overlay">
+          <div class="grid-zoom">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M1 12L12 1M12 1H1M12 1v11" stroke="var(--warm)" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="grid-info">
+          <div class="grid-info-cat">Portrait · Studio</div>
+          <div class="grid-info-title">Ride or Die</div>
+        </div>
+      </div>
+
+      <div class="grid-item reveal" data-category="sports" onclick="openLightbox(5)">
+        <img src="IMG_4084.jpg" alt="Game Day Energy" />
+        <div class="grid-overlay">
+          <div class="grid-zoom">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M1 12L12 1M12 1H1M12 1v11" stroke="var(--warm)" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="grid-info">
+          <div class="grid-info-cat">Sports · Football</div>
+          <div class="grid-info-title">Game Day Energy</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -230,7 +293,7 @@
       </button>
 
       <div class="lb-info">
-        <div class="lb-counter" id="lbCounter">1 / 5</div>
+        <div class="lb-counter" id="lbCounter">1 / 9</div>
         <div class="lb-cat"     id="lbCat"></div>
         <div class="lb-title"   id="lbTitle"></div>
       </div>
@@ -318,6 +381,10 @@
       { src: 'IMG_4047.jpeg', title: 'Golden Hour — Class of 2023', cat: 'Graduation · 2023',     filter: 'graduation' },
       { src: 'IMG_4048.jpeg', title: 'City Standards',              cat: 'Portrait · Lifestyle',  filter: 'portrait'   },
       { src: 'IMG_4049.jpeg', title: 'Suited Up',                   cat: 'Lifestyle',             filter: 'lifestyle'  },
+      { src: 'IMG_4084.jpg',  title: 'Game Day Energy',             cat: 'Sports · Football',     filter: 'sports'     },
+      { src: 'IMG_4087.jpg',  title: 'Blue & Gold After Dark',      cat: 'Graduation · Night',    filter: 'graduation' },
+      { src: 'IMG_4086.jpg',  title: 'Reflections',                 cat: 'Graduation · UH',       filter: 'graduation' },
+      { src: 'IMG_4085.jpg',  title: 'Ride or Die',                 cat: 'Portrait · Studio',     filter: 'portrait'   },
     ];
 
     /* Build thumbnails */
