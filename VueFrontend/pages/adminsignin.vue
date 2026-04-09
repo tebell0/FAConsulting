@@ -76,6 +76,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import AppCursor from '../components/AppCursor.vue'
 import { useFonts } from '../composables/useFonts.js'
+import api from '@/services/api.js'
 useFonts()
 
 // ── Cursor state ──────────────────────────────────────────
@@ -83,8 +84,6 @@ const isHovering = ref(false)
 const router = useRouter()
 
 // ── Auth state ────────────────────────────────────────────
-const ADMIN_USER = 'JayxCreatez'
-
 const username   = ref('')
 const password   = ref('')
 const showError  = ref(false)
@@ -94,28 +93,28 @@ const btnLabel   = ref('Sign In')
 const cardEl     = ref(null)
 const passwordEl = ref(null)
 
-function handleSignIn() {
-  const adminPass = localStorage.getItem('adminPass') || 'password'
+async function handleSignIn() {
+  signingIn.value = true
+  btnLabel.value  = 'Signing in…'
+  showError.value = false
 
-  if (username.value === ADMIN_USER && password.value === adminPass) {
+  try {
+    await api.admin.signIn({ username: username.value, password: password.value })
     // ── Success ──
-    showError.value = false
-    signingIn.value = true
-    btnLabel.value  = 'Signing in…'
     sessionStorage.setItem('adminAuth', '1')
     setTimeout(() => { router.push('/admindash') }, 600)
-  } else {
+  } catch {
     // ── Failure ──
+    signingIn.value = false
+    btnLabel.value  = 'Sign In'
     showError.value = true
     password.value  = ''
 
-    // Restart shake animation via reflow trick
+    // Shake animation
     isShaking.value = false
-    // Use nextTick-equivalent: force reflow then re-add class
     requestAnimationFrame(() => {
       void cardEl.value?.offsetWidth
       isShaking.value = true
-      // Remove class after animation completes so it can re-trigger next time
       setTimeout(() => { isShaking.value = false }, 450)
     })
 

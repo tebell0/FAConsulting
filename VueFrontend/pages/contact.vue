@@ -183,6 +183,7 @@ import AppCursor from '../components/AppCursor.vue'
 import AppNav    from '../components/AppNav.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { useFonts } from '../composables/useFonts.js'
+import api from '@/services/api.js'
 useFonts()
 
 // ── Cursor state ──────────────────────────────────────────
@@ -262,34 +263,24 @@ function validate() {
 }
 
 // ── Submit ────────────────────────────────────────────────
-function submitForm() {
+async function submitForm() {
   if (!validate()) return
 
-  const tagInfo  = INQUIRY_TAG_MAP[form.inquiryType] || INQUIRY_TAG_MAP.other
   const fullName = `${form.firstName} ${form.lastName}`
-  const initials = (form.firstName[0] + form.lastName[0]).toUpperCase()
-  const now      = new Date()
-  const dateStr  = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-  const timeStr  = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-
-  const newMsg = {
-    id:       'contact-' + Date.now(),
-    initials,
-    name:     fullName,
-    tag:      tagInfo.label,
-    tagClass: tagInfo.cls,
-    meta:     `${tagInfo.label} &nbsp;·&nbsp; ${dateStr} &nbsp;·&nbsp; ${timeStr}`,
-    body:     form.message,
-    email:    form.email,
-    phone:    form.phone.replace(/-/g, ''),
-    dob:      form.dob,
-  }
 
   try {
-    const existing = JSON.parse(localStorage.getItem('contactMessages') || '[]')
-    existing.unshift(newMsg)
-    localStorage.setItem('contactMessages', JSON.stringify(existing))
-  } catch { /* fail silently */ }
+    await api.contact.submit({
+      name:        fullName,
+      email:       form.email,
+      phone:       form.phone,
+      dob:         form.dob,
+      inquiryType: form.inquiryType,
+      message:     form.message,
+    })
+  } catch (err) {
+    // Fallback: still show confirmation (form UI should not block on backend error)
+    console.error('[contact] submit failed:', err.message)
+  }
 
   // Show confirmation popup
   confirmedName.value  = form.firstName

@@ -286,6 +286,7 @@ import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import AppCursor from '../components/AppCursor.vue'
 import AppNav    from '../components/AppNav.vue'
 import { useFonts } from '../composables/useFonts.js'
+import api from '@/services/api.js'
 useFonts()
 
 // ── Cursor state ──────────────────────────────────────────
