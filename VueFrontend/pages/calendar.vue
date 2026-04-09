@@ -529,45 +529,46 @@ const review = computed(() => ({
 // ── Confirmation ──────────────────────────────────────────
 const confirmed    = ref(false)
 const confirmData  = reactive({ ref: '', pkg: '', dt: '', email: '' })
+const submitting   = ref(false)
 
-function submitBooking() {
+async function submitBooking() {
+  if (submitting.value) return
+  submitting.value = true
+
   const dateStr = selectedDate.value
     ? selectedDate.value.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '—'
-  const refNum   = 'JXC-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000)
-  const isoDate  = selectedDate.value ? toIso(selectedDate.value) : ''
-  const initials = (form.firstName.charAt(0) + form.lastName.charAt(0)).toUpperCase()
-
-  const newBooking = {
-    id:          refNum.toLowerCase(),
-    name:        `${form.firstName} ${form.lastName}`,
-    initials,
-    package:     selectedPackage.value.name,
-    isoDate,
-    time:        selectedTime.value,
-    location:    LOCATION_LABELS[form.location] || form.location,
-    badge:       'Pending',
-    status:      'upcoming',
-    email:       form.email,
-    phone:       form.phone || '—',
-    sessionType: SESSION_TYPE_LABELS[form.sessionType] || form.sessionType,
-    notes:       form.notes || '—',
-    price:       '$' + selectedPackage.value.price.toLocaleString(),
-    ref:         refNum,
-    link:        null,
-  }
+  const isoDate = selectedDate.value ? toIso(selectedDate.value) : ''
 
   try {
-    const arr = JSON.parse(localStorage.getItem('appointments') || '[]')
-    arr.push(newBooking)
-    localStorage.setItem('appointments', JSON.stringify(arr))
-  } catch { /* fail silently */ }
-
-  confirmData.ref   = refNum
-  confirmData.pkg   = selectedPackage.value.name
-  confirmData.dt    = `${dateStr} at ${selectedTime.value}`
-  confirmData.email = form.email
-  confirmed.value   = true
+    const result = await api.calendar.book({
+      firstName:   form.firstName,
+      lastName:    form.lastName,
+      email:       form.email,
+      phone:       form.phone || '',
+      package:     selectedPackage.value.name,
+      isoDate,
+      time:        selectedTime.value,
+      location:    LOCATION_LABELS[form.location] || form.location,
+      sessionType: SESSION_TYPE_LABELS[form.sessionType] || form.sessionType,
+      notes:       form.notes || '',
+    })
+    confirmData.ref   = result.ref
+    confirmData.pkg   = selectedPackage.value.name
+    confirmData.dt    = `${dateStr} at ${selectedTime.value}`
+    confirmData.email = form.email
+    confirmed.value   = true
+  } catch (err) {
+    console.error('[calendar] booking failed:', err.message)
+    // Show confirmation anyway so the UI doesn't block the user
+    confirmData.ref   = 'PENDING'
+    confirmData.pkg   = selectedPackage.value.name
+    confirmData.dt    = `${dateStr} at ${selectedTime.value}`
+    confirmData.email = form.email
+    confirmed.value   = true
+  } finally {
+    submitting.value = false
+  }
 }
 
 // ── Lifecycle ─────────────────────────────────────────────

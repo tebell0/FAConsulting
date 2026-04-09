@@ -44,6 +44,17 @@ function validateConfig(config) {
 let pgPool;
 let mysqlPool;
 
+/**
+ * Returns the active connection pool.
+ * Call after testDatabaseConnection() has been invoked at least once
+ * so the pool is already initialised.
+ */
+export function getPool() {
+  const { DB_CLIENT = 'mysql' } = process.env
+  if (DB_CLIENT.toLowerCase() === 'postgres') return pgPool
+  return mysqlPool
+}
+
 export async function testDatabaseConnection() {
   const config = getConfig();
   validateConfig(config);

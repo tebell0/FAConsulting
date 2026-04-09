@@ -109,11 +109,10 @@ const api = {
 
   // ── Calendar / Bookings ──────────────────────────────────────
   calendar: {
-    /**
-     * GET /api/calendar
-     * @returns {{ ok: boolean, slots: object[] }}
-     */
+    /** GET /api/calendar — availability + booked slots */
     list: () => get('/api/calendar'),
+    /** POST /api/calendar/book — submit a new booking */
+    book: (payload) => post('/api/calendar/book', payload),
   },
 
   // ── Contact ──────────────────────────────────────────────────
@@ -148,30 +147,64 @@ const api = {
       sessionStorage.removeItem('adminAuth')
     },
 
-    /**
-     * GET /api/admin/dash
-     * @returns {{ ok: boolean, stats: object }}
-     */
+    /** GET /api/admin/dash — stats + appointments + messages */
     dash: () => get('/api/admin/dash'),
 
-    /**
-     * GET /api/admin/deliverables
-     * @returns {{ ok: boolean, deliverables: object[] }}
-     */
+    /** GET /api/admin/messages */
+    messages: () => get('/api/admin/messages'),
+
+    /** GET /api/admin/deliverables */
     deliverables: () => get('/api/admin/deliverables'),
 
-    /**
-     * GET /api/admin/settings
-     * @returns {{ ok: boolean, settings: object }}
-     */
+    /** PUT /api/admin/deliverables/:id/link */
+    setDeliveryLink: (id, link) => put(`/api/admin/deliverables/${id}/link`, { link }),
+
+    /** GET /api/admin/services */
+    getServices: () => get('/api/admin/services'),
+
+    /** POST /api/admin/services */
+    createService: (svc) => post('/api/admin/services', svc),
+
+    /** PUT /api/admin/services/:id */
+    updateService: (id, svc) => put(`/api/admin/services/${id}`, svc),
+
+    /** DELETE /api/admin/services/:id */
+    deleteService: (id) => del(`/api/admin/services/${id}`),
+
+    /** GET /api/admin/settings */
     getSettings: () => get('/api/admin/settings'),
 
-    /**
-     * PUT /api/admin/settings
-     * @param {object} updates
-     * @returns {{ ok: boolean, message: string }}
-     */
+    /** PUT /api/admin/settings */
     updateSettings: (updates) => put('/api/admin/settings', updates),
+
+    /** GET /api/admin/availability */
+    getAvailability: () => get('/api/admin/availability'),
+
+    /** PUT /api/admin/availability */
+    saveAvailability: (payload) => put('/api/admin/availability', payload),
+
+    /**
+     * POST /api/admin/upload-url
+     * Ask the backend for a presigned S3 PUT URL for one file.
+     * @param {{ appointmentId: string, fileName: string, contentType: string }} payload
+     * @returns {{ ok, uploadUrl, key, publicUrl, folderUrl }}
+     */
+    getUploadUrl: (payload) => post('/api/admin/upload-url', payload),
+
+    /**
+     * GET /api/admin/download-url?key=…
+     * Get a short-lived presigned GET URL for a private S3 object.
+     * @param {string} key
+     * @returns {{ ok, url }}
+     */
+    getDownloadUrl: (key) => get(`/api/admin/download-url?key=${encodeURIComponent(key)}`),
+
+    /**
+     * DELETE /api/admin/s3-object
+     * Remove an object from S3.
+     * @param {string} key
+     */
+    deleteS3Object: (key) => request('/api/admin/s3-object', { method: 'DELETE', body: JSON.stringify({ key }) }),
   },
 }
 

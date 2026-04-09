@@ -664,47 +664,32 @@ const SEED_MESSAGES = [
   { id:'msg-2', initials:'CM', name:'Camille Monroe', tag:'Additional Info', tagClass:'msg-tag--info',       meta:'Additional Info &nbsp;·&nbsp; April 9, 2026 &nbsp;·&nbsp; 4:05 PM', body:"Hey! Super excited for our session next week. Quick question — roughly how long does it take to receive the edited gallery after the shoot? I have a birthday post I'd love to use some of the photos for and I'm trying to plan around the timeline. Also, do you send a sneak peek before the full delivery? Thank you so much!", email:'camille.monroe@email.com', phone:'2815550374' },
 ]
 
-// ── localStorage helpers ──────────────────────────────────
-function loadAppointments() {
-  try { return JSON.parse(localStorage.getItem('appointments') || 'null') } catch { return null }
-}
-function saveAppointments(arr) { localStorage.setItem('appointments', JSON.stringify(arr)) }
-function getBlockedDates() { try { return JSON.parse(localStorage.getItem('blockedDates') || '[]') } catch { return [] } }
-function getBlockedTimes() { try { return JSON.parse(localStorage.getItem('blockedTimes') || '{}') } catch { return {} } }
-function saveBlockedDates(arr) { localStorage.setItem('blockedDates', JSON.stringify(arr)) }
-function saveBlockedTimes(obj) { localStorage.setItem('blockedTimes', JSON.stringify(obj)) }
+// ── Availability state (loaded from API) ──────────────────
+let _blockedDates = []
+let _blockedTimes = {}
+
+function getBlockedDates() { return _blockedDates }
+function getBlockedTimes() { return _blockedTimes }
+
+function saveBlockedDatesLocal(arr) { _blockedDates = arr }
+function saveBlockedTimesLocal(obj) { _blockedTimes = obj }
+
 function getPrice(pkg) {
-  return parseInt(localStorage.getItem('price-' + pkg.replace('The ', '').toLowerCase())) || PRICES[pkg] || 0
+  return PRICES[pkg] || 0
 }
 
 function autoPromote(arr) {
-  const today = new Date(); today.setHours(0,0,0,0)
-  let changed = false
+  const todayD = new Date(); todayD.setHours(0,0,0,0)
   arr.forEach(a => {
-    if (a.status === 'upcoming' && new Date(a.isoDate) < today) { a.status = 'completed'; changed = true }
+    if (a.status === 'upcoming' && new Date(a.isoDate) < todayD) a.status = 'completed'
   })
-  if (changed) saveAppointments(arr)
   return arr
 }
 
-// ── Boot appointment store ────────────────────────────────
-let allAppointments = loadAppointments()
-if (!allAppointments) {
-  allAppointments = SEED_APPOINTMENTS.map(a => ({ ...a }))
-  saveAppointments(allAppointments)
-} else {
-  const existingIds = new Set(allAppointments.map(a => a.id))
-  SEED_APPOINTMENTS.forEach(s => { if (!existingIds.has(s.id)) allAppointments.push({ ...s }) })
-  saveAppointments(allAppointments)
-}
-allAppointments = autoPromote(allAppointments)
-
-// ── Derived views (non-reactive — stable after mount) ─────
-const upcomingAppointments = allAppointments
-  .filter(a => a.status === 'upcoming')
-  .sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))
-
-const historyRecords = allAppointments.slice().sort((a, b) => new Date(b.isoDate) - new Date(a.isoDate))
+// ── Reactive appointment / message stores ─────────────────
+const allAppointments   = ref([])
+const upcomingAppointments = ref([])
+const historyRecords    = ref([])
 
 // ── Helpers ───────────────────────────────────────────────
 function fmtDate(iso) {
@@ -716,10 +701,10 @@ function toIso(y, m, d) { return y + '-' + String(m + 1).padStart(2,'0') + '-' +
 // ── Carousel ──────────────────────────────────────────────
 const apptIndex   = ref(0)
 const carouselCard = ref(null)
-const currentAppt = computed(() => upcomingAppointments[apptIndex.value] || {})
+const currentAppt = computed(() => upcomingAppointments.value[apptIndex.value] || {})
 
 function changeAppt(dir) {
-  if (!upcomingAppointments.length) return
+  if (!upcomingAppointments.value.length) return
   const card = carouselCard.value
   if (card) {
     card.style.transition = 'opacity 0.2s ease, transform 0.2s ease'
@@ -727,7 +712,7 @@ function changeAppt(dir) {
     card.style.transform  = dir > 0 ? 'translateX(-40px)' : 'translateX(40px)'
   }
   setTimeout(() => {
-    apptIndex.value = (apptIndex.value + dir + upcomingAppointments.length) % upcomingAppointments.length
+    apptIndex.value = (apptIndex.value + dir + upcomingAppointments.value.length) % upcomingAppointments.value.length
     if (card) {
       card.style.transition = 'none'
       card.style.transform  = dir > 0 ? 'translateX(40px)' : 'translateX(-40px)'
@@ -748,7 +733,7 @@ const dashCalMonthLabel = computed(() => MONTH_NAMES[dashMonth.value] + ' ' + da
 const dashCalFirstDay   = computed(() => new Array(new Date(dashYear.value, dashMonth.value, 1).getDay()).fill(0))
 const dashCalDays = computed(() => {
   const daysInMonth  = new Date(dashYear.value, dashMonth.value + 1, 0).getDate()
-  const apptDays     = allAppointments
+  const apptDays     = allAppointments.value
     .filter(a => { if (a.status === 'cancelled') return false; const d = new Date(a.isoDate); return d.getFullYear() === dashYear.value && d.getMonth() === dashMonth.value })
     .map(a => new Date(a.isoDate).getDate())
   const blockedDays  = getBlockedDates()
@@ -767,7 +752,7 @@ const dashCalDays = computed(() => {
 })
 
 const upcomingThisMonthLabel = computed(() => {
-  const n = upcomingAppointments.filter(a => {
+  const n = upcomingAppointments.value.filter(a => {
     const d = new Date(a.isoDate + 'T00:00:00')
     return d.getFullYear() === dashYear.value && d.getMonth() === dashMonth.value
   }).length
@@ -783,26 +768,18 @@ function dashChangeMonth(dir) {
 // ── Payment stats (computed) ──────────────────────────────
 const paymentStats = computed(() => {
   const now = new Date()
-  const monthTotal = allAppointments
+  const monthTotal = allAppointments.value
     .filter(a => a.status !== 'cancelled' && a.status !== 'upcoming')
     .filter(a => { const d = new Date(a.isoDate + 'T00:00:00'); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() })
     .reduce((s, a) => s + getPrice(a.package), 0)
-  const invoices   = allAppointments.filter(a => a.status !== 'cancelled').length
-  const pendingAmt = allAppointments.filter(a => a.status === 'upcoming').reduce((s, a) => s + getPrice(a.package), 0)
-  const collected  = allAppointments.filter(a => a.status === 'delivered' || a.status === 'completed').reduce((s, a) => s + getPrice(a.package), 0)
+  const invoices   = allAppointments.value.filter(a => a.status !== 'cancelled').length
+  const pendingAmt = allAppointments.value.filter(a => a.status === 'upcoming').reduce((s, a) => s + getPrice(a.package), 0)
+  const collected  = allAppointments.value.filter(a => a.status === 'delivered' || a.status === 'completed').reduce((s, a) => s + getPrice(a.package), 0)
   return { monthTotal, invoices, pendingAmt, collected }
 })
 
 // ── Messages ──────────────────────────────────────────────
-function loadAllMessages() {
-  try {
-    const submitted = JSON.parse(localStorage.getItem('contactMessages') || '[]')
-    const seedIds   = new Set(SEED_MESSAGES.map(m => m.id))
-    return [...submitted.filter(m => !seedIds.has(m.id)), ...SEED_MESSAGES]
-  } catch { return [...SEED_MESSAGES] }
-}
-
-const messages = ref(loadAllMessages())
+const messages = ref([...SEED_MESSAGES])
 const readSet  = ref(new Set((() => { try { return JSON.parse(localStorage.getItem('readMsgs') || '[]') } catch { return [] } })()))
 
 function saveReadSet() { localStorage.setItem('readMsgs', JSON.stringify([...readSet.value])) }
@@ -843,8 +820,8 @@ const expandedRows = reactive(new Set())
 
 const filteredHistory = computed(() =>
   activeHistoryFilter.value === 'all'
-    ? historyRecords
-    : historyRecords.filter(r => r.status === activeHistoryFilter.value)
+    ? historyRecords.value
+    : historyRecords.value.filter(r => r.status === activeHistoryFilter.value)
 )
 
 function hasDetails(r) { return !!(r.email || r.phone || r.sessionType || r.notes) }
@@ -863,16 +840,16 @@ const pieTooltipHtml    = ref('')
 
 const typesSlices = computed(() => {
   const counts = {}
-  allAppointments.filter(a => a.status !== 'cancelled').forEach(a => { counts[a.package] = (counts[a.package] || 0) + 1 })
+  allAppointments.value.filter(a => a.status !== 'cancelled').forEach(a => { counts[a.package] = (counts[a.package] || 0) + 1 })
   return Object.entries(counts).map(([pkg, val]) => ({ label: pkg, value: val, color: PKG_COLORS[pkg] || '#c8a97e' }))
 })
 const typesTotal = computed(() => typesSlices.value.reduce((s, d) => s + d.value, 0) || 1)
 
 const paymentSlices = computed(() => {
-  const delivered = allAppointments.filter(a => a.status === 'delivered').length
-  const upcoming  = allAppointments.filter(a => a.status === 'upcoming').length
-  const completed = allAppointments.filter(a => a.status === 'completed').length
-  const cancelled = allAppointments.filter(a => a.status === 'cancelled').length
+  const delivered = allAppointments.value.filter(a => a.status === 'delivered').length
+  const upcoming  = allAppointments.value.filter(a => a.status === 'upcoming').length
+  const completed = allAppointments.value.filter(a => a.status === 'completed').length
+  const cancelled = allAppointments.value.filter(a => a.status === 'cancelled').length
   const slices = []
   if (delivered > 0) slices.push({ label:'Delivered', value:delivered, color:'#7ec8c8' })
   if (upcoming  > 0) slices.push({ label:'Upcoming',  value:upcoming,  color:'#c8a97e' })
@@ -957,10 +934,10 @@ function hidePieTooltip() { pieTooltipVisible.value = false }
 // Tooltip content builders
 function typesHoverHtml(slice) {
   const todayM = new Date(); todayM.setHours(0,0,0,0)
-  const next   = allAppointments
+  const next   = allAppointments.value
     .filter(a => a.package === slice.label && a.status === 'upcoming' && new Date(a.isoDate + 'T00:00:00') >= todayM)
     .sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))[0]
-  const count  = allAppointments.filter(a => a.package === slice.label && a.status !== 'cancelled').length
+  const count  = allAppointments.value.filter(a => a.package === slice.label && a.status !== 'cancelled').length
   return next
     ? `<div class="pie-tt-pkg" style="color:${slice.color}">${slice.label}</div>
        <div class="pie-tt-row"><span class="pie-tt-label">Next up</span><span class="pie-tt-val">${next.name}</span></div>
@@ -979,7 +956,7 @@ const MONEY_LABEL = { Delivered:'Received', Upcoming:'Outstanding', Completed:'R
 
 function paymentsHoverHtml(slice) {
   const statuses = STATUS_LABEL_MAP[slice.label] || []
-  const matching = allAppointments.filter(a => statuses.includes(a.status))
+  const matching = allAppointments.value.filter(a => statuses.includes(a.status))
   const moneyTotal = matching.reduce((s, a) => s + getPrice(a.package), 0)
   const todayM = new Date(); todayM.setHours(0,0,0,0)
   const featured = slice.label === 'Upcoming'
@@ -1075,42 +1052,48 @@ function toggleSlot(slot) {
   // pulse animation
   if (!clickedAvailSlots.value.includes(slot)) clickedAvailSlots.value.push(slot)
   setTimeout(() => { clickedAvailSlots.value = clickedAvailSlots.value.filter(s => s !== slot) }, 450)
-  // toggle blocked state
+  // toggle blocked state in local memory
   const bt  = getBlockedTimes()
-  const arr = bt[availSelectedIso.value] || []
+  const arr = (bt[availSelectedIso.value] || []).slice()
   const idx = arr.indexOf(slot)
   if (idx === -1) arr.push(slot); else arr.splice(idx, 1)
   if (arr.length === 0) delete bt[availSelectedIso.value]
   else bt[availSelectedIso.value] = arr
-  saveBlockedTimes(bt)
+  saveBlockedTimesLocal(bt)
 }
 
-function saveAvailability() {
+async function saveAvailability() {
   if (!availSelectedIso.value) return
-  const bd = getBlockedDates()
-  const bt = getBlockedTimes()
+  const bd = getBlockedDates().slice()
+  const bt = { ...getBlockedTimes() }
   if (availBlockFull.value) {
     if (!bd.includes(availSelectedIso.value)) bd.push(availSelectedIso.value)
     delete bt[availSelectedIso.value]
-    saveBlockedTimes(bt)
   } else {
     const idx = bd.indexOf(availSelectedIso.value)
     if (idx !== -1) bd.splice(idx, 1)
   }
-  saveBlockedDates(bd)
+  saveBlockedDatesLocal(bd)
+  saveBlockedTimesLocal(bt)
+  try {
+    await api.admin.saveAvailability({ blockedDates: bd, blockedTimes: bt })
+  } catch (e) { console.warn('Availability save error:', e.message) }
   showAvailSaved()
 }
 
-function clearDateConfig() {
+async function clearDateConfig() {
   if (!availSelectedIso.value) return
-  const bd = getBlockedDates()
-  const bt = getBlockedTimes()
+  const bd = getBlockedDates().slice()
+  const bt = { ...getBlockedTimes() }
   const idx = bd.indexOf(availSelectedIso.value)
   if (idx !== -1) bd.splice(idx, 1)
   delete bt[availSelectedIso.value]
-  saveBlockedDates(bd)
-  saveBlockedTimes(bt)
+  saveBlockedDatesLocal(bd)
+  saveBlockedTimesLocal(bt)
   availBlockFull.value = false
+  try {
+    await api.admin.saveAvailability({ blockedDates: bd, blockedTimes: bt })
+  } catch (e) { console.warn('Availability clear error:', e.message) }
   showAvailSaved()
 }
 
@@ -1160,8 +1143,64 @@ function onKeyDown(e) {
 }
 
 // ── Lifecycle ─────────────────────────────────────────────
-onMounted(() => {
-  // Auth guard (router also guards this route, but belt-and-suspenders)
+function drawAllCharts() {
+  const ts = typesSlices.value
+  drawPie(canvasTypes.value,     ts.length     ? ts                   : [{ label:'No data', value:1, color:'rgba(245,240,235,0.15)' }], typesHoverHtml)
+  drawPie(canvasPayments.value,  paymentSlices.value, paymentsHoverHtml)
+  const is = inquirySlices.value
+  drawPie(canvasInquiries.value, is.length     ? is                   : [{ label:'No data', value:1, color:'rgba(245,240,235,0.15)' }], inquiriesHoverHtml)
+}
+
+/** Normalise a raw DB appointment row → dashboard shape */
+function normaliseAppt(a) {
+  const iso    = (a.appointment_date || a.isoDate || '').slice(0, 10)
+  const name   = a.client_name  || a.name  || 'Unknown'
+  const parts  = name.trim().split(' ')
+  const init   = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2)
+  return {
+    id:        String(a.id || a.id),
+    name,
+    initials:  a.initials || init.toUpperCase(),
+    package:   a.package_name || a.package || '',
+    isoDate:   iso,
+    time:      a.appointment_time || a.time || '',
+    location:  a.location || '',
+    badge:     a.badge    || 'Confirmed',
+    status:    a.status   || 'upcoming',
+    email:     a.client_email || a.email || '',
+    phone:     a.client_phone || a.phone || '—',
+    notes:     a.notes    || '—',
+  }
+}
+
+/** Normalise a raw DB message row → dashboard shape */
+function normaliseMsg(m) {
+  const name   = m.name || m.client_name || 'Unknown'
+  const parts  = name.trim().split(' ')
+  const init   = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : parts[0].slice(0, 2)
+  const tag    = m.tag || m.subject || 'General'
+  const tagMap = {
+    'Reschedule':     'msg-tag--reschedule',
+    'Billing':        'msg-tag--billing',
+    'Additional Info':'msg-tag--info',
+    'Location Change':'msg-tag--location',
+    'Delivery':       'msg-tag--delivery',
+  }
+  return {
+    id:       String(m.id),
+    name,
+    initials: (m.initials || init).toUpperCase(),
+    tag,
+    tagClass: tagMap[tag] || 'msg-tag--info',
+    meta:     m.meta || `${tag} &nbsp;·&nbsp; ${new Date(m.created_at || Date.now()).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })}`,
+    body:     m.message || m.body || '',
+    email:    m.email || '',
+    phone:    m.phone || '—',
+  }
+}
+
+onMounted(async () => {
+  // Auth guard
   if (sessionStorage.getItem('adminAuth') !== '1') {
     router.push('/adminsignin')
     return
@@ -1169,11 +1208,63 @@ onMounted(() => {
 
   document.addEventListener('keydown', onKeyDown)
 
-  // Draw charts after DOM is ready
-  const ts = typesSlices.value
-  drawPie(canvasTypes.value, ts.length ? ts : [{ label:'No data', value:1, color:'rgba(245,240,235,0.15)' }], typesHoverHtml)
-  drawPie(canvasPayments.value, paymentSlices.value, paymentsHoverHtml)
-  drawPie(canvasInquiries.value, inquirySlices.value.length ? inquirySlices.value : [{ label:'No data', value:1, color:'rgba(245,240,235,0.15)' }], inquiriesHoverHtml)
+  // ── Load availability ────────────────────────────────────
+  try {
+    const avail = await api.admin.getAvailability()
+    saveBlockedDatesLocal(avail?.blockedDates ?? avail?.blocked_dates ?? [])
+    saveBlockedTimesLocal(avail?.blockedTimes ?? avail?.blocked_times ?? {})
+  } catch { /* stay with empty defaults */ }
+
+  // ── Load appointments + messages ─────────────────────────
+  try {
+    const dash = await api.admin.dash()
+
+    // appointments
+    const raw = dash?.appointments ?? dash?.data?.appointments ?? []
+    let appts = raw.map(normaliseAppt)
+    // merge seed if DB is empty
+    if (appts.length === 0) {
+      appts = SEED_APPOINTMENTS.map(a => ({ ...a }))
+    } else {
+      // still prepend seed items whose IDs don't appear in DB (demo safety)
+      const dbIds = new Set(appts.map(a => a.id))
+      SEED_APPOINTMENTS.forEach(s => { if (!dbIds.has(s.id)) appts.push({ ...s }) })
+    }
+    autoPromote(appts)
+    allAppointments.value      = appts
+    upcomingAppointments.value = appts.filter(a => a.status === 'upcoming').sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))
+    historyRecords.value       = appts.slice().sort((a, b) => new Date(b.isoDate) - new Date(a.isoDate))
+
+    // messages
+    const rawMsgs = dash?.messages ?? dash?.data?.messages ?? []
+    if (rawMsgs.length > 0) {
+      const dbMsgIds = new Set(rawMsgs.map(m => String(m.id)))
+      const merged   = [...rawMsgs.map(normaliseMsg), ...SEED_MESSAGES.filter(s => !dbMsgIds.has(s.id))]
+      messages.value = merged
+    }
+    // else keep SEED_MESSAGES already set
+  } catch {
+    // API unavailable — fall back to seeds
+    const seeded = autoPromote(SEED_APPOINTMENTS.map(a => ({ ...a })))
+    allAppointments.value      = seeded
+    upcomingAppointments.value = seeded.filter(a => a.status === 'upcoming').sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))
+    historyRecords.value       = seeded.slice().sort((a, b) => new Date(b.isoDate) - new Date(a.isoDate))
+  }
+
+  // ── Also fetch messages separately if dash didn't include them ──
+  if (messages.value.length <= SEED_MESSAGES.length) {
+    try {
+      const msgData = await api.admin.messages()
+      const rawMsgs = msgData?.messages ?? msgData ?? []
+      if (rawMsgs.length > 0) {
+        const dbMsgIds = new Set(rawMsgs.map(m => String(m.id)))
+        messages.value = [...rawMsgs.map(normaliseMsg), ...SEED_MESSAGES.filter(s => !dbMsgIds.has(s.id))]
+      }
+    } catch { /* keep seeds */ }
+  }
+
+  // Draw charts now that data is populated
+  drawAllCharts()
 })
 
 onBeforeUnmount(() => {

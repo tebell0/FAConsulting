@@ -74,7 +74,7 @@
           <!-- Upload progress -->
           <div class="upload-progress" :class="{ visible: uploadVisible }">
             <div class="progress-label">
-              <span>Uploading…</span>
+              <span>{{ uploadStatus || 'Uploading…' }}</span>
               <span>{{ uploadPct }}%</span>
             </div>
             <div class="progress-bar">
@@ -247,23 +247,35 @@ useFonts()
 const isHovering = ref(false)
 const router = useRouter()
 
-// ── Appointment store ─────────────────────────────────────
-function loadAppointments() {
-  try { return JSON.parse(localStorage.getItem('appointments') || '[]') } catch { return [] }
-}
-function saveAppointments(arr) { localStorage.setItem('appointments', JSON.stringify(arr)) }
+// ── Appointment store (API + seed fallback) ───────────────
+const SEED_APPOINTMENTS = [
+  { id:'jxc-001', name:'Aaliya Montgomery', package:'The Signature',  isoDate:'2026-04-10', time:'2:00 PM',  location:'Hermann Park, Houston, TX',  status:'upcoming', email:'aaliya@email.com',   phone:'8325550101' },
+  { id:'jxc-002', name:'Marcus Thompson',   package:'The Elite',      isoDate:'2026-04-17', time:'11:00 AM', location:'Downtown Houston, TX',        status:'upcoming', email:'marcus@email.com',   phone:'7135550202' },
+  { id:'jxc-003', name:'Brianna Sanders',   package:'The Essentials', isoDate:'2026-04-24', time:'4:30 PM',  location:'Memorial Park, Houston, TX',  status:'upcoming', email:'brianna@email.com',  phone:'2815550303' },
+]
+
+const upcomingAppts = ref([])
 
 function fmtDateShort(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-const allAppointments = loadAppointments()
-const upcomingAppts   = allAppointments
-  .filter(a => a.status === 'upcoming')
-  .sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))
+function normaliseAppt(a) {
+  return {
+    id:       String(a.id),
+    name:     a.client_name  || a.name  || 'Unknown',
+    package:  a.package_name || a.package || '',
+    isoDate:  (a.appointment_date || a.isoDate || '').slice(0, 10),
+    time:     a.appointment_time || a.time || '',
+    location: a.location || '—',
+    status:   a.status || 'upcoming',
+    email:    a.client_email || a.email || '',
+    phone:    a.client_phone || a.phone || '—',
+  }
+}
 
 // ── Client selector ───────────────────────────────────────
-const selectedApptId = ref(upcomingAppts.length ? upcomingAppts[0].id : '')
+const selectedApptId = ref('')
 
 const summary = reactive({
   client:   '—',
@@ -274,25 +286,24 @@ const summary = reactive({
 })
 
 function syncSummary() {
-  const appt = upcomingAppts.find(a => a.id === selectedApptId.value)
+  const appt = upcomingAppts.value.find(a => a.id === selectedApptId.value)
   if (!appt) return
   summary.client   = appt.name
   summary.session  = appt.package + ' · ' + fmtDateShort(appt.isoDate) + ' · ' + appt.time
   summary.location = appt.location || '—'
   summary.email    = appt.email || ''
   summary.phone    = appt.phone && appt.phone !== '—' ? appt.phone : ''
-  // Reset link state when switching clients
   secureLink.value = ''
+  uploadedKeys.value = []
+  folderUrl.value  = ''
 }
 
-function onClientChange() {
-  syncSummary()
-}
+function onClientChange() { syncSummary() }
 
 // ── File handling ─────────────────────────────────────────
-const fileInputEl    = ref(null)
-const selectedFiles  = ref([])
-const isDragOver     = ref(false)
+const fileInputEl   = ref(null)
+const selectedFiles = ref([])
+const isDragOver    = ref(false)
 
 function addFiles(newFiles) {
   newFiles.forEach(f => {
@@ -311,9 +322,7 @@ function onFileInputChange() {
   if (fileInputEl.value) addFiles([...fileInputEl.value.files])
 }
 
-function removeFile(idx) {
-  selectedFiles.value.splice(idx, 1)
-}
+function removeFile(idx) { selectedFiles.value.splice(idx, 1) }
 
 function formatBytes(b) {
   if (b < 1024)    return b + ' B'
@@ -321,9 +330,7 @@ function formatBytes(b) {
   return (b / 1048576).toFixed(1) + ' MB'
 }
 
-function ext(name) {
-  return name.split('.').pop().toUpperCase().slice(0, 4)
-}
+function ext(name) { return name.split('.').pop().toUpperCase().slice(0, 4) }
 
 const summaryFilesLabel = computed(() => {
   const n = selectedFiles.value.length
@@ -336,16 +343,25 @@ const summarySize = computed(() => {
 })
 
 // ── Secure link ───────────────────────────────────────────
-const secureLink  = ref('')
-const linkCopied  = ref(false)
-const linkExpiry  = ref('')
+const secureLink   = ref('')
+const linkCopied   = ref(false)
+const linkExpiry   = ref('')
 const linkPassword = ref('')
 
+// S3 tracking
+const uploadedKeys = ref([])   // S3 keys of successfully uploaded files
+const folderUrl    = ref('')   // S3 folder URL set after first upload
+
 function generateLink() {
+  // If files were already uploaded to S3, use the folder URL
+  if (folderUrl.value) {
+    secureLink.value = folderUrl.value
+    return
+  }
+  // Otherwise generate a placeholder gallery link
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  const token = Array.from({ length: 18 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  const token  = Array.from({ length: 18 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
   secureLink.value = 'https://jayxcreatez.com/gallery/' + token
-  // Auto-set expiry 30 days from today if blank
   if (!linkExpiry.value) {
     const d = new Date()
     d.setDate(d.getDate() + 30)
@@ -364,58 +380,145 @@ function copyLink() {
 // ── Delivery note ─────────────────────────────────────────
 const deliveryNote = ref('')
 
-// ── Upload progress + send ────────────────────────────────
-const uploadVisible = ref(false)
-const uploadPct     = ref(0)
-const sent          = ref(false)
-const sendDisabled  = computed(() => !secureLink.value || sent.value)
+// ── Upload progress ───────────────────────────────────────
+const uploadVisible  = ref(false)
+const uploadPct      = ref(0)
+const uploadStatus   = ref('')   // status label shown above the bar
+const sent           = ref(false)
+const sendDisabled   = computed(() => !secureLink.value || sent.value || uploading.value)
+const uploading      = ref(false)
 
-let progressInterval = null
+/**
+ * Upload one File via a presigned S3 PUT URL.
+ * Uses XMLHttpRequest so we get upload progress events.
+ *
+ * @param {string} uploadUrl  – presigned PUT URL from backend
+ * @param {File}   file       – File object
+ * @param {(pct: number) => void} onProgress – called 0-100
+ */
+function uploadFileToS3(uploadUrl, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', uploadUrl)
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream')
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
+    }
+    xhr.onload  = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error(`S3 upload failed: HTTP ${xhr.status}`))
+    xhr.onerror = () => reject(new Error('Network error during S3 upload.'))
+    xhr.send(file)
+  })
+}
 
-function sendPackage() {
+async function sendPackage() {
   if (!secureLink.value) {
     alert('Please generate a secure link before sending.')
     return
   }
+  if (!selectedApptId.value) {
+    alert('Please select a client appointment.')
+    return
+  }
+
+  uploading.value     = true
   uploadVisible.value = true
   uploadPct.value     = 0
+  uploadStatus.value  = 'Preparing upload…'
+  sent.value          = false
 
-  progressInterval = setInterval(() => {
-    uploadPct.value += Math.random() * 18
-    if (uploadPct.value >= 100) {
-      uploadPct.value = 100
-      clearInterval(progressInterval)
-      finishSend()
+  const files = selectedFiles.value
+
+  try {
+    if (files.length > 0) {
+      // ── Upload each file via presigned PUT ────────────────
+      let completedBytes = 0
+      const totalBytes   = files.reduce((s, f) => s + f.size, 0)
+      const keys = []
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        uploadStatus.value = `Uploading ${i + 1} of ${files.length}: ${file.name}`
+
+        // Get a presigned URL from the backend
+        const { uploadUrl, key, folderUrl: fUrl } = await api.admin.getUploadUrl({
+          appointmentId: selectedApptId.value,
+          fileName:      file.name,
+          contentType:   file.type || 'application/octet-stream',
+        })
+
+        // Track the folder URL from the first file
+        if (!folderUrl.value && fUrl) {
+          folderUrl.value  = fUrl
+          secureLink.value = fUrl
+        }
+
+        const fileBytes = file.size
+        await uploadFileToS3(uploadUrl, file, (filePct) => {
+          // Blend per-file progress into overall progress
+          const doneBytes = completedBytes + (fileBytes * filePct / 100)
+          uploadPct.value = Math.round((doneBytes / totalBytes) * 100)
+        })
+
+        keys.push(key)
+        completedBytes += fileBytes
+        uploadedKeys.value = keys
+      }
+
+      uploadPct.value    = 100
+      uploadStatus.value = 'Saving delivery link…'
+    } else {
+      // No files — just record the manual link
+      uploadPct.value    = 80
+      uploadStatus.value = 'Saving delivery link…'
     }
-  }, 180)
-}
 
-function finishSend() {
-  const all  = loadAppointments()
-  const appt = all.find(a => a.id === selectedApptId.value)
-  if (appt) {
-    appt.status = 'delivered'
-    appt.link   = secureLink.value
-    saveAppointments(all)
+    // ── Persist the delivery link in the DB ───────────────
+    await api.admin.setDeliveryLink(selectedApptId.value, secureLink.value)
+
+    uploadPct.value    = 100
+    uploadStatus.value = 'Complete!'
+
+    setTimeout(() => {
+      uploadVisible.value = false
+      uploading.value     = false
+      sent.value          = true
+    }, 500)
+
+  } catch (err) {
+    uploadStatus.value  = `Error: ${err.message}`
+    uploadPct.value     = 0
+    uploading.value     = false
+    console.error('Upload error:', err)
   }
-  setTimeout(() => {
-    uploadVisible.value = false
-    sent.value = true
-  }, 400)
 }
 
 // ── Lifecycle ─────────────────────────────────────────────
-onMounted(() => {
+onMounted(async () => {
   if (sessionStorage.getItem('adminAuth') !== '1') {
     router.push('/adminsignin')
     return
   }
-  syncSummary()
+
+  // Load upcoming appointments from API, fall back to seeds
+  try {
+    const dash = await api.admin.dash()
+    const raw  = (dash?.appointments ?? []).filter(a => (a.status || 'upcoming') === 'upcoming')
+    if (raw.length > 0) {
+      upcomingAppts.value = raw.map(normaliseAppt).sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))
+    } else {
+      upcomingAppts.value = SEED_APPOINTMENTS
+    }
+  } catch {
+    upcomingAppts.value = SEED_APPOINTMENTS
+  }
+
+  if (upcomingAppts.value.length) {
+    selectedApptId.value = upcomingAppts.value[0].id
+    syncSummary()
+  }
 })
 
-onBeforeUnmount(() => {
-  if (progressInterval) clearInterval(progressInterval)
-})
+onBeforeUnmount(() => { /* nothing to tear down */ })
 </script>
 
 <style>

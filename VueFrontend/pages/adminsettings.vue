@@ -225,15 +225,13 @@ useFonts()
 const isHovering = ref(false)
 const router = useRouter()
 
-// ── Credentials ───────────────────────────────────────────
-const adminPass  = ref(localStorage.getItem('adminPass')  || 'password')
-const adminEmail = ref(localStorage.getItem('adminEmail') || 'jalen@jayxcreatez.com')
+// ── Credentials (loaded from API / fallback localStorage) ─
+const adminEmail = ref('jalen@jayxcreatez.com')
 
 // ── Email form ────────────────────────────────────────────
 const newEmail     = ref('')
 const confirmEmail = ref('')
 const emailFeedback = reactive({ msg: '', type: '' })
-let emailFeedbackTimer = null
 
 function showFeedback(target, msg, type) {
   target.msg  = msg
@@ -242,17 +240,21 @@ function showFeedback(target, msg, type) {
   target._timer = setTimeout(() => { target.msg = ''; target.type = '' }, 4000)
 }
 
-function saveEmail() {
+async function saveEmail() {
   const next = newEmail.value.trim()
   const conf = confirmEmail.value.trim()
   if (!next) { showFeedback(emailFeedback, 'Please enter a new email address.', 'error'); return }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) { showFeedback(emailFeedback, "That doesn't look like a valid email.", 'error'); return }
   if (next !== conf) { showFeedback(emailFeedback, 'Emails do not match.', 'error'); return }
   if (next === adminEmail.value) { showFeedback(emailFeedback, "That's already your current email.", 'error'); return }
-  adminEmail.value = next
-  localStorage.setItem('adminEmail', adminEmail.value)
-  clearEmailForm()
-  showFeedback(emailFeedback, '✓ Email updated successfully.', 'success')
+  try {
+    await api.admin.updateSettings({ admin_email: next })
+    adminEmail.value = next
+    clearEmailForm()
+    showFeedback(emailFeedback, '✓ Email updated successfully.', 'success')
+  } catch (err) {
+    showFeedback(emailFeedback, err.message || 'Failed to update email.', 'error')
+  }
 }
 
 function clearEmailForm() {
@@ -288,23 +290,24 @@ const pwStrength = computed(() => {
   return { ...lvl, labelColor: lvl.color }
 })
 
-function savePassword() {
+async function savePassword() {
   const cur  = currentPass.value
   const next = newPass.value
   const conf = confirmPass.value
   if (!cur)  { showFeedback(passwordFeedback, 'Enter your current password.', 'error'); return }
-  if (cur !== adminPass.value) {
-    showFeedback(passwordFeedback, 'Current password is incorrect.', 'error')
-    currentPass.value = ''
-    return
-  }
   if (next.length < 8) { showFeedback(passwordFeedback, 'New password must be at least 8 characters.', 'error'); return }
   if (next !== conf)   { showFeedback(passwordFeedback, 'New passwords do not match.', 'error'); return }
-  if (next === adminPass.value) { showFeedback(passwordFeedback, 'New password must differ from current.', 'error'); return }
-  adminPass.value = next
-  localStorage.setItem('adminPass', adminPass.value)
-  clearPasswordForm()
-  showFeedback(passwordFeedback, '✓ Password updated successfully.', 'success')
+  try {
+    await api.admin.updateSettings({ current_password: cur, new_password: next })
+    clearPasswordForm()
+    showFeedback(passwordFeedback, '✓ Password updated successfully.', 'success')
+  } catch (err) {
+    const msg = err.status === 401
+      ? 'Current password is incorrect.'
+      : (err.message || 'Failed to update password.')
+    showFeedback(passwordFeedback, msg, 'error')
+    currentPass.value = ''
+  }
 }
 
 function clearPasswordForm() {
@@ -321,15 +324,24 @@ const SVC_DEFAULTS = [
   { id: 'svc-4', name: 'The Wedding',    duration: '5 hr',   price: 1500, desc: 'Full-day wedding coverage from preparation to reception, beautifully documented and delivered.' },
 ]
 
-function loadServices() {
-  try {
-    const raw = localStorage.getItem('services')
-    return raw ? JSON.parse(raw) : SVC_DEFAULTS.map(s => ({ ...s }))
-  } catch { return SVC_DEFAULTS.map(s => ({ ...s })) }
-}
-function persistServices(arr) { localStorage.setItem('services', JSON.stringify(arr)) }
+const services  = ref([])
+const svcLoading = ref(false)
 
-const services = ref(loadServices())
+async function fetchServices() {
+  svcLoading.value = true
+  try {
+    const data = await api.admin.getServices()
+    services.value = data?.services ?? data ?? []
+  } catch {
+    // fall back to localStorage or defaults
+    try {
+      const raw = localStorage.getItem('services')
+      services.value = raw ? JSON.parse(raw) : SVC_DEFAULTS.map(s => ({ ...s }))
+    } catch { services.value = SVC_DEFAULTS.map(s => ({ ...s })) }
+  } finally {
+    svcLoading.value = false
+  }
+}
 
 const svcForm = reactive({ name: '', duration: '', price: '', desc: '' })
 const svcEditId = ref('')
@@ -338,37 +350,42 @@ const svcFeedback = reactive({ msg: '', type: '' })
 const svcFormTitle    = computed(() => svcEditId.value ? 'Edit Service'   : 'Add New Service')
 const svcSaveBtnLabel = computed(() => svcEditId.value ? 'Save Changes'   : 'Add Service')
 
-function saveSvc() {
+async function saveSvc() {
   const { name, duration, price, desc } = svcForm
   if (!name.trim())        { showFeedback(svcFeedback, 'Package name is required.', 'error'); return }
   if (!duration.trim())    { showFeedback(svcFeedback, 'Duration is required.', 'error'); return }
   if (!price || price < 1) { showFeedback(svcFeedback, 'Enter a valid price.', 'error'); return }
 
-  if (svcEditId.value) {
-    const svc = services.value.find(s => s.id === svcEditId.value)
-    if (svc) { svc.name = name.trim(); svc.duration = duration.trim(); svc.price = price; svc.desc = desc.trim() }
-    showFeedback(svcFeedback, '✓ Service updated.', 'success')
-  } else {
-    services.value.push({ id: 'svc-' + Date.now(), name: name.trim(), duration: duration.trim(), price, desc: desc.trim() })
-    showFeedback(svcFeedback, '✓ Service added.', 'success')
+  const payload = { name: name.trim(), duration: duration.trim(), price: Number(price), description: desc.trim() }
+
+  try {
+    if (svcEditId.value) {
+      const updated = await api.admin.updateService(svcEditId.value, payload)
+      const svc = services.value.find(s => String(s.id) === String(svcEditId.value))
+      if (svc) Object.assign(svc, { name: payload.name, duration: payload.duration, price: payload.price, desc: payload.description })
+      showFeedback(svcFeedback, '✓ Service updated.', 'success')
+    } else {
+      const created = await api.admin.createService(payload)
+      // re-fetch to get the server-assigned id
+      await fetchServices()
+      showFeedback(svcFeedback, '✓ Service added.', 'success')
+    }
+  } catch (err) {
+    showFeedback(svcFeedback, err.message || 'Failed to save service.', 'error')
+    return
   }
 
-  // Sync price-{key} so calendar page stays in sync
-  const priceKey = name.trim().replace(/^The\s+/i, '').toLowerCase()
-  localStorage.setItem('price-' + priceKey, price)
-
-  persistServices(services.value)
   cancelSvcEdit()
 }
 
 function startEditSvc(id) {
-  const svc = services.value.find(s => s.id === id)
+  const svc = services.value.find(s => String(s.id) === String(id))
   if (!svc) return
   svcEditId.value  = svc.id
   svcForm.name     = svc.name
   svcForm.duration = svc.duration
   svcForm.price    = svc.price
-  svcForm.desc     = svc.desc || ''
+  svcForm.desc     = svc.desc ?? svc.description ?? ''
 }
 
 function cancelSvcEdit() {
@@ -379,25 +396,36 @@ function cancelSvcEdit() {
   svcForm.desc     = ''
 }
 
-function deleteSvc(id) {
+async function deleteSvc(id) {
   if (!confirm('Remove this service? This cannot be undone.')) return
-  services.value = services.value.filter(s => s.id !== id)
-  persistServices(services.value)
-  showFeedback(svcFeedback, '✓ Service removed.', 'success')
+  try {
+    await api.admin.deleteService(id)
+    services.value = services.value.filter(s => String(s.id) !== String(id))
+    showFeedback(svcFeedback, '✓ Service removed.', 'success')
+  } catch (err) {
+    showFeedback(svcFeedback, err.message || 'Failed to remove service.', 'error')
+  }
 }
 
 // ── Sign Out ──────────────────────────────────────────────
 function signOut() {
-  sessionStorage.removeItem('adminAuth')
+  api.admin.signOut()
   router.push('/adminsignin')
 }
 
 // ── Lifecycle ─────────────────────────────────────────────
-onMounted(() => {
+onMounted(async () => {
   if (sessionStorage.getItem('adminAuth') !== '1') {
     router.push('/adminsignin')
     return
   }
+  // Load services and settings in parallel
+  await fetchServices()
+  try {
+    const settings = await api.admin.getSettings()
+    if (settings?.admin_email) adminEmail.value = settings.admin_email
+    else if (settings?.settings?.admin_email) adminEmail.value = settings.settings.admin_email
+  } catch { /* use default */ }
 })
 
 onBeforeUnmount(() => {
