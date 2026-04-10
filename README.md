@@ -228,6 +228,7 @@ curl -X DELETE $BASE/api/admin/s3-object \
   -H "Content-Type: application/json" \
   -H "x-admin-token: $TOKEN" \
   -d '{"key":"deliverables/jxc-2026-1234/photo.jpg"}'
+
 ```
 
 ---

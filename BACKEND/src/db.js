@@ -44,15 +44,42 @@ function validateConfig(config) {
 let pgPool;
 let mysqlPool;
 
-/**
- * Returns the active connection pool.
- * Call after testDatabaseConnection() has been invoked at least once
- * so the pool is already initialised.
- */
+function getPgPool(config) {
+  if (!pgPool) {
+    pgPool = new Pool({
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      user: config.user,
+      password: config.password,
+      ssl: config.ssl ? { rejectUnauthorized: false } : false,
+    });
+  }
+  return pgPool;
+}
+
+function getMysqlPool(config) {
+  if (!mysqlPool) {
+    mysqlPool = mysql.createPool({
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      user: config.user,
+      password: config.password,
+      waitForConnections: true,
+      connectionLimit: 10,
+      ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
+    });
+  }
+  return mysqlPool;
+}
+
 export function getPool() {
-  const { DB_CLIENT = 'mysql' } = process.env
-  if (DB_CLIENT.toLowerCase() === 'postgres') return pgPool
-  return mysqlPool
+  const config = getConfig();
+  validateConfig(config);
+  if (config.client === "postgres") return getPgPool(config);
+  if (config.client === "mysql") return getMysqlPool(config);
+  throw new Error('Unsupported DB_CLIENT. Use "postgres" or "mysql".');
 }
 
 export async function testDatabaseConnection() {
@@ -60,18 +87,8 @@ export async function testDatabaseConnection() {
   validateConfig(config);
 
   if (config.client === "postgres") {
-    if (!pgPool) {
-      pgPool = new Pool({
-        host: config.host,
-        port: config.port,
-        database: config.database,
-        user: config.user,
-        password: config.password,
-        ssl: config.ssl ? { rejectUnauthorized: false } : false,
-      });
-    }
-
-    const result = await pgPool.query("SELECT NOW() AS connected_at");
+    const pool = getPgPool(config);
+    const result = await pool.query("SELECT NOW() AS connected_at");
     return {
       client: "postgres",
       connectedAt: result.rows[0].connected_at,
@@ -79,20 +96,8 @@ export async function testDatabaseConnection() {
   }
 
   if (config.client === "mysql") {
-    if (!mysqlPool) {
-      mysqlPool = mysql.createPool({
-        host: config.host,
-        port: config.port,
-        database: config.database,
-        user: config.user,
-        password: config.password,
-        waitForConnections: true,
-        connectionLimit: 10,
-        ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
-      });
-    }
-
-    const [rows] = await mysqlPool.query("SELECT NOW() AS connected_at");
+    const pool = getMysqlPool(config);
+    const [rows] = await pool.query("SELECT NOW() AS connected_at");
     return {
       client: "mysql",
       connectedAt: rows[0].connected_at,
@@ -101,3 +106,4 @@ export async function testDatabaseConnection() {
 
   throw new Error('Unsupported DB_CLIENT. Use "postgres" or "mysql".');
 }
+
