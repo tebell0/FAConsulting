@@ -41,6 +41,16 @@ router.get("/gallery", async (_req, res, next) => {
   }
 });
 
+// ── Services (public — needed by booking page) ────────────────────
+router.get("/services", async (_req, res, next) => {
+  try {
+    const services = await getServices(getPool());
+    res.json({ ok: true, services });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Calendar — availability + booked slots ────────────────────────
 router.get("/calendar", async (_req, res, next) => {
   try {
@@ -92,44 +102,52 @@ router.post("/contact", async (req, res, next) => {
   }
 });
 
-// ── Admin ─────────────────────────────────────────────────────────
-
-/**
- * Simple middleware that checks for a valid admin session token.
- * Replace with a proper JWT / session strategy when ready.
- */
+// ── Admin auth middleware ──────────────────────────────────────────
 function requireAdmin(req, res, next) {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    // ADMIN_SECRET not configured — refuse all admin access
+    return res.status(503).json({ ok: false, error: "Admin authentication is not configured on this server." });
+  }
   const token = req.headers["x-admin-token"];
-  if (!token || token !== process.env.ADMIN_SECRET) {
+  if (!token || token !== secret) {
     return res.status(401).json({ ok: false, error: "Unauthorized." });
   }
   next();
 }
 
+// ── Admin sign-in ─────────────────────────────────────────────────
 router.post("/admin/signin", async (req, res, next) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) {
       return res.status(400).json({ ok: false, error: "username and password are required." });
     }
+
+    if (!process.env.ADMIN_SECRET) {
+      return res.status(503).json({ ok: false, error: "Admin authentication is not configured on this server." });
+    }
+
     let authorized = false;
     try {
       const admin = await getAdminByUsername(getPool(), username);
-      // NOTE: replace with bcrypt.compare() once password hashing is added
       authorized = !!admin && password === admin.password_hash;
     } catch {
-      // admin_users table not yet created — fall back to env vars
+      // admin_users table not yet seeded — fall back to env vars
       authorized = username === process.env.ADMIN_USER && password === process.env.ADMIN_PASSWORD;
     }
+
     if (!authorized) {
       return res.status(401).json({ ok: false, error: "Invalid credentials." });
     }
+
     res.json({ ok: true, token: process.env.ADMIN_SECRET });
   } catch (err) {
     next(err);
   }
 });
 
+// ── Admin dashboard ───────────────────────────────────────────────
 router.get("/admin/dash", requireAdmin, async (_req, res, next) => {
   try {
     const pool = getPool();
@@ -153,6 +171,7 @@ router.get("/admin/messages", requireAdmin, async (_req, res, next) => {
   }
 });
 
+// ── Admin deliverables ────────────────────────────────────────────
 router.get("/admin/deliverables", requireAdmin, async (_req, res, next) => {
   try {
     const deliverables = await getAppointments(getPool());
@@ -173,6 +192,7 @@ router.put("/admin/deliverables/:id/link", requireAdmin, async (req, res, next) 
   }
 });
 
+// ── Admin services ────────────────────────────────────────────────
 router.get("/admin/services", requireAdmin, async (_req, res, next) => {
   try {
     const services = await getServices(getPool());
@@ -213,6 +233,7 @@ router.delete("/admin/services/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
+// ── Admin settings ────────────────────────────────────────────────
 router.get("/admin/settings", requireAdmin, async (_req, res, next) => {
   try {
     const settings = await getSettings(getPool());
@@ -235,6 +256,7 @@ router.put("/admin/settings", requireAdmin, async (req, res, next) => {
   }
 });
 
+// ── Admin availability ────────────────────────────────────────────
 router.get("/admin/availability", requireAdmin, async (_req, res, next) => {
   try {
     const availability = await getAvailability(getPool());
@@ -263,9 +285,9 @@ router.put("/admin/availability", requireAdmin, async (req, res, next) => {
  * Body: { appointmentId, fileName, contentType }
  * Returns: { ok, uploadUrl, key, publicUrl, folderUrl }
  *
- * The browser then PUTs the file bytes directly to `uploadUrl`.
- * After all files are uploaded, call PUT /admin/deliverables/:id/link
- * with `folderUrl` to record the delivery link.
+ * The browser PUTs the file bytes directly to uploadUrl.
+ * After all uploads complete, call PUT /admin/deliverables/:id/link
+ * with folderUrl to record the delivery link on the appointment.
  */
 router.post("/admin/upload-url", requireAdmin, async (req, res, next) => {
   try {
@@ -273,7 +295,6 @@ router.post("/admin/upload-url", requireAdmin, async (req, res, next) => {
     if (!appointmentId || !fileName || !contentType) {
       return res.status(400).json({ ok: false, error: "appointmentId, fileName and contentType are required." });
     }
-    // Sanitise fileName so it's safe for S3 key
     const safeName = fileName.replace(/[^a-zA-Z0-9._\-]/g, "_");
     const prefix   = buildDeliveryPrefix(appointmentId);
     const key      = `${prefix}${safeName}`;
@@ -293,7 +314,7 @@ router.post("/admin/upload-url", requireAdmin, async (req, res, next) => {
 // ── S3 — presigned download URL ───────────────────────────────────
 /**
  * GET /api/admin/download-url?key=deliverables/jxc-001/photo.jpg
- * Returns a short-lived signed GET URL for a private object.
+ * Returns a short-lived signed GET URL for a private S3 object.
  */
 router.get("/admin/download-url", requireAdmin, async (req, res, next) => {
   try {

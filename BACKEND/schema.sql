@@ -84,12 +84,12 @@ CREATE TABLE IF NOT EXISTS gallery_items (
   created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ── Availability — fully blocked dates ───────────────────────────
+-- ── Availability — fully blocked dates ────────────────────────────
 CREATE TABLE IF NOT EXISTS availability_blocked_dates (
   iso_date DATE NOT NULL PRIMARY KEY
 );
 
--- ── Availability — individually blocked time slots ────────────────
+-- ── Availability — individually blocked time slots ─────────────────
 CREATE TABLE IF NOT EXISTS availability_blocked_slots (
   iso_date  DATE        NOT NULL,
   slot      VARCHAR(12) NOT NULL,
@@ -97,8 +97,6 @@ CREATE TABLE IF NOT EXISTS availability_blocked_slots (
 );
 
 -- ── Admin users ───────────────────────────────────────────────────
--- password_hash stores the plain password for now.
--- Swap in bcrypt hashing before production.
 CREATE TABLE IF NOT EXISTS admin_users (
   id            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
   username      VARCHAR(60)  NOT NULL UNIQUE,
@@ -106,6 +104,9 @@ CREATE TABLE IF NOT EXISTS admin_users (
   email         VARCHAR(100) NOT NULL DEFAULT ''
 );
 
--- Default admin user (change password immediately after first login)
-INSERT IGNORE INTO admin_users (username, password_hash, email) VALUES
-  ('JayxCreatez', 'CIS4375!', 'jalen@jayxcreatez.com');
+-- Default admin account.
+-- password_hash is set via the admin settings page after first login.
+-- Insert a hashed password here before running in production.
+-- Example (bcrypt hash of a strong password):
+--   INSERT IGNORE INTO admin_users (username, password_hash, email) VALUES
+--     ('JayxCreatez', '<bcrypt_hash_here>', 'jalen@jayxcreatez.com');
