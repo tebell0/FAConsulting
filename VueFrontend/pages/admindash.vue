@@ -102,29 +102,6 @@
         </button>
       </div>
 
-      <!-- Payments Block -->
-      <div class="dash-block fade-up visible">
-        <div class="dash-block-header">
-          <div class="section-label">Financials</div>
-          <h2 class="dash-block-title">Payments</h2>
-        </div>
-        <div class="dash-stat-row">
-          <div class="dash-stat">
-            <div class="dash-stat-num">${{ paymentStats.monthTotal.toLocaleString() }}</div>
-            <div class="dash-stat-label">This Month</div>
-          </div>
-          <div class="dash-stat">
-            <div class="dash-stat-num">{{ paymentStats.invoices }}</div>
-            <div class="dash-stat-label">Invoices</div>
-          </div>
-          <div class="dash-stat">
-            <div class="dash-stat-num">${{ paymentStats.pendingAmt.toLocaleString() }}</div>
-            <div class="dash-stat-label">Outstanding</div>
-          </div>
-        </div>
-        <p class="dash-empty" style="margin-top:1.5rem;">No payment records found.</p>
-      </div>
-
       <!-- Messages Block -->
       <div class="dash-block fade-up visible">
         <div class="dash-block-header">
@@ -180,27 +157,6 @@
             <span class="legend-dot" :style="{ background: s.color }"></span>
             <span class="legend-label">{{ s.label }}</span>
             <span class="legend-val">{{ Math.round((s.value / typesTotal) * 100) }}%</span>
-          </li>
-        </ul>
-      </div>
-
-      <div class="analytics-card">
-        <div class="analytics-header">
-          <div class="section-label">Financials</div>
-          <h2 class="dash-block-title">Payment Status</h2>
-        </div>
-        <div class="chart-wrap">
-          <canvas ref="canvasPayments" width="160" height="160"></canvas>
-          <div class="chart-center-label">
-            <span class="chart-center-num">${{ paymentStats.collected.toLocaleString() }}</span>
-            <span class="chart-center-sub">collected</span>
-          </div>
-        </div>
-        <ul class="chart-legend">
-          <li v-for="s in paymentSlices" :key="s.label">
-            <span class="legend-dot" :style="{ background: s.color }"></span>
-            <span class="legend-label">{{ s.label }}</span>
-            <span class="legend-val">{{ Math.round((s.value / paymentSlicesTotal) * 100) }}%</span>
           </li>
         </ul>
       </div>
@@ -1324,7 +1280,7 @@ body { background: var(--black); color: var(--off-white); font-family: 'DM Sans'
 .appt-counter { margin-left: auto; font-size: 0.65rem; letter-spacing: 0.2em; color: rgba(245,240,235,0.3); }
 
 /* ── Dash Blocks ── */
-.dash-blocks { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 2rem; padding: 3rem 4rem 5rem; }
+.dash-blocks { display: grid; grid-template-columns: 1.4fr 1fr; gap: 2rem; padding: 3rem 4rem 5rem; }
 .dash-block { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 2px; padding: 2rem 2rem 1.8rem; box-shadow: 0 4px 40px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.06) inset; position: relative; }
 .dash-block::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--warm), transparent); }
 .dash-block-header { margin-bottom: 1.5rem; }
@@ -1375,7 +1331,7 @@ body { background: var(--black); color: var(--off-white); font-family: 'DM Sans'
 .msg-unread { position: absolute; top: 1.1rem; right: 0.5rem; width: 7px; height: 7px; border-radius: 50%; background: var(--warm); }
 
 /* ── Analytics Row ── */
-.analytics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; padding: 0 4rem 5rem; }
+.analytics-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; padding: 0 4rem 5rem; }
 .analytics-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 2px; padding: 2rem 2rem 1.8rem; box-shadow: 0 4px 40px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.06) inset; position: relative; display: flex; flex-direction: column; align-items: center; }
 .analytics-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--warm), transparent); }
 .analytics-header { width: 100%; margin-bottom: 1.8rem; }

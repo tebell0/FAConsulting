@@ -109,7 +109,7 @@
               type="text"
               class="link-input"
               v-model="secureLink"
-              placeholder="Click Generate to create link"
+              placeholder="Upload files above — link auto-generates"
               readonly
               @mouseenter="isHovering=true" @mouseleave="isHovering=false"
             />
@@ -123,8 +123,10 @@
 
           <div style="margin-top:0.8rem;">
             <button class="btn-back" style="font-size:0.65rem;padding:0.65rem 1.4rem;" @click="generateLink"
+              :disabled="!folderUrl"
+              :title="folderUrl ? 'Use S3 delivery link' : 'Upload files first to generate link'"
               @mouseenter="isHovering=true" @mouseleave="isHovering=false">
-              Generate Link
+              {{ folderUrl ? 'Use Upload Link' : 'Upload Files First' }}
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/></svg>
             </button>
           </div>
@@ -184,13 +186,10 @@
             <div class="dlv-summary-row">
               <span class="dlv-summary-key">Secure link</span>
               <span class="dlv-summary-val" :class="secureLink ? 'status-ok' : 'status-warn'">
-                {{ secureLink ? 'Generated ✓' : 'Not generated' }}
+                {{ secureLink ? 'Generated ✓' : 'Generated after upload' }}
               </span>
             </div>
-            <div class="dlv-summary-row">
-              <span class="dlv-summary-key">Payment</span>
-              <span class="dlv-summary-val status-ok">Confirmed</span>
-            </div>
+
           </div>
 
           <!-- Send button -->
@@ -353,20 +352,13 @@ const uploadedKeys = ref([])   // S3 keys of successfully uploaded files
 const folderUrl    = ref('')   // S3 folder URL set after first upload
 
 function generateLink() {
-  // If files were already uploaded to S3, use the folder URL
+  // Only use the real S3 folder URL set after upload
   if (folderUrl.value) {
     secureLink.value = folderUrl.value
     return
   }
-  // Otherwise generate a placeholder gallery link
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  const token  = Array.from({ length: 18 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-  secureLink.value = 'https://jayxcreatez.com/gallery/' + token
-  if (!linkExpiry.value) {
-    const d = new Date()
-    d.setDate(d.getDate() + 30)
-    linkExpiry.value = d.toISOString().split('T')[0]
-  }
+  // No files uploaded yet — prompt admin to upload first
+  alert('Please upload files first. The secure link is generated automatically after upload completes.')
 }
 
 function copyLink() {
@@ -385,7 +377,7 @@ const uploadVisible  = ref(false)
 const uploadPct      = ref(0)
 const uploadStatus   = ref('')   // status label shown above the bar
 const sent           = ref(false)
-const sendDisabled   = computed(() => !secureLink.value || sent.value || uploading.value)
+const sendDisabled   = computed(() => !selectedFiles.value.length || sent.value || uploading.value)
 const uploading      = ref(false)
 
 /**
@@ -411,12 +403,12 @@ function uploadFileToS3(uploadUrl, file, onProgress) {
 }
 
 async function sendPackage() {
-  if (!secureLink.value) {
-    alert('Please generate a secure link before sending.')
-    return
-  }
   if (!selectedApptId.value) {
     alert('Please select a client appointment.')
+    return
+  }
+  if (!selectedFiles.value.length) {
+    alert('Please add at least one file to upload.')
     return
   }
 
@@ -446,10 +438,9 @@ async function sendPackage() {
           contentType:   file.type || 'application/octet-stream',
         })
 
-        // Track the folder URL from the first file
+        // Track the folder URL from the first file (used as fallback)
         if (!folderUrl.value && fUrl) {
-          folderUrl.value  = fUrl
-          secureLink.value = fUrl
+          folderUrl.value = fUrl
         }
 
         const fileBytes = file.size
@@ -465,6 +456,21 @@ async function sendPackage() {
       }
 
       uploadPct.value    = 100
+      uploadStatus.value = 'Generating secure link…'
+
+      // Generate a presigned GET URL for the first uploaded file
+      // This gives the client a real, working link they can open directly
+      try {
+        const firstKey = uploadedKeys.value[0]
+        const { url } = await api.admin.getDownloadUrl(firstKey)
+        secureLink.value = url
+        folderUrl.value  = url  // keep folderUrl in sync so button stays active
+      } catch (e) {
+        // Fallback to folder URL if download URL generation fails
+        secureLink.value = folderUrl.value
+        console.warn('Could not generate presigned GET URL, using folder URL:', e.message)
+      }
+
       uploadStatus.value = 'Saving delivery link…'
     } else {
       // No files — just record the manual link
