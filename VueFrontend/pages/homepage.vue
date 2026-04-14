@@ -233,19 +233,14 @@ onMounted(async () => {
   )
   document.querySelectorAll('.fade-up').forEach(el => scrollObserver.observe(el))
 
-  // Load services from API → localStorage fallback → hardcoded defaults
+  // Load services from API → hardcoded defaults
   try {
     const data = await api.services.list()
     const list = data?.services ?? data ?? []
     services.value = list.slice(0, 3).map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
   } catch {
-    try {
-      const raw = localStorage.getItem('services')
-      const list = raw ? JSON.parse(raw) : SVC_DEFAULTS
-      services.value = list.slice(0, 3).map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
-    } catch {
-      services.value = SVC_DEFAULTS.slice(0, 3)
-    }
+    // API unavailable — fall back to hardcoded defaults
+    services.value = SVC_DEFAULTS.slice(0, 3)
   }
 })
 

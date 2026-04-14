@@ -634,14 +634,37 @@ const router = useRouter()
 const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa']
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const AVAIL_SLOTS = ['9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM']
-const PKG_COLORS  = { 'The Signature':'#c8a97e', 'The Elite':'#7ec8c8', 'The Essentials':'#b89ec8', 'The Wedding':'#7ec89e' }
-const PKG_DURATION = { 'The Essentials':'30 min', 'The Signature':'1 hr', 'The Elite':'2 hr', 'The Wedding':'5 hr' }
-const PRICES = { 'The Essentials': 295, 'The Signature': 345, 'The Elite': 427, 'The Wedding': 1500 }
+// PKG_COLORS keyed by package name — static colour palette, extended for custom packages below
+const PKG_COLORS_STATIC = { 'The Signature':'#c8a97e', 'The Elite':'#7ec8c8', 'The Essentials':'#b89ec8', 'The Wedding':'#7ec89e' }
+const PKG_COLORS_POOL   = ['#c8a97e','#7ec8c8','#b89ec8','#7ec89e','#c8c87e','#7ec8b8','#d4a4c8','#a4c8d4']
 const STATUS_META = {
   upcoming:  { label: 'Pending',   cls: 'status--pending'   },
   completed: { label: 'Completed', cls: 'status--completed' },
   delivered: { label: 'Delivered', cls: 'status--delivered' },
   cancelled: { label: 'Cancelled', cls: 'status--cancelled' },
+}
+
+// ── Services (loaded from API — drives pkgDuration, getPrice, PKG_COLORS) ──
+const dbServices = ref([])
+
+// Fallback static maps used before API responds / if API is unavailable
+const PKG_DURATION_STATIC = { 'The Essentials':'30 min', 'The Signature':'1 hr', 'The Elite':'2 hr', 'The Wedding':'5 hr' }
+const PRICES_STATIC = { 'The Essentials': 295, 'The Signature': 345, 'The Elite': 427, 'The Wedding': 1500 }
+
+function pkgDuration(pkg) {
+  const svc = dbServices.value.find(s => s.name === pkg)
+  return svc?.duration || PKG_DURATION_STATIC[pkg] || ''
+}
+
+function getPrice(pkg) {
+  const svc = dbServices.value.find(s => s.name === pkg)
+  return svc ? Number(svc.price) : (PRICES_STATIC[pkg] || 0)
+}
+
+function getPkgColor(pkg) {
+  if (PKG_COLORS_STATIC[pkg]) return PKG_COLORS_STATIC[pkg]
+  const idx = dbServices.value.findIndex(s => s.name === pkg)
+  return PKG_COLORS_POOL[idx % PKG_COLORS_POOL.length] || '#c8a97e'
 }
 
 // ── Seed data ─────────────────────────────────────────────
@@ -664,19 +687,15 @@ const SEED_MESSAGES = [
   { id:'msg-2', initials:'CM', name:'Camille Monroe', tag:'Additional Info', tagClass:'msg-tag--info',       meta:'Additional Info &nbsp;·&nbsp; April 9, 2026 &nbsp;·&nbsp; 4:05 PM', body:"Hey! Super excited for our session next week. Quick question — roughly how long does it take to receive the edited gallery after the shoot? I have a birthday post I'd love to use some of the photos for and I'm trying to plan around the timeline. Also, do you send a sneak peek before the full delivery? Thank you so much!", email:'camille.monroe@email.com', phone:'2815550374' },
 ]
 
-// ── Availability state (loaded from API) ──────────────────
-let _blockedDates = []
-let _blockedTimes = {}
+// ── Availability state (loaded from API, reactive refs so calendar redraws) ──
+const blockedDatesRef = ref([])
+const blockedTimesRef = ref({})
 
-function getBlockedDates() { return _blockedDates }
-function getBlockedTimes() { return _blockedTimes }
+function getBlockedDates() { return blockedDatesRef.value }
+function getBlockedTimes() { return blockedTimesRef.value }
 
-function saveBlockedDatesLocal(arr) { _blockedDates = arr }
-function saveBlockedTimesLocal(obj) { _blockedTimes = obj }
-
-function getPrice(pkg) {
-  return PRICES[pkg] || 0
-}
+function saveBlockedDatesLocal(arr) { blockedDatesRef.value = [...arr] }
+function saveBlockedTimesLocal(obj) { blockedTimesRef.value = { ...obj } }
 
 function autoPromote(arr) {
   const todayD = new Date(); todayD.setHours(0,0,0,0)
@@ -695,7 +714,6 @@ const historyRecords    = ref([])
 function fmtDate(iso) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })
 }
-function pkgDuration(pkg) { return PKG_DURATION[pkg] || '' }
 function toIso(y, m, d) { return y + '-' + String(m + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0') }
 
 // ── Carousel ──────────────────────────────────────────────
@@ -841,7 +859,7 @@ const pieTooltipHtml    = ref('')
 const typesSlices = computed(() => {
   const counts = {}
   allAppointments.value.filter(a => a.status !== 'cancelled').forEach(a => { counts[a.package] = (counts[a.package] || 0) + 1 })
-  return Object.entries(counts).map(([pkg, val]) => ({ label: pkg, value: val, color: PKG_COLORS[pkg] || '#c8a97e' }))
+  return Object.entries(counts).map(([pkg, val]) => ({ label: pkg, value: val, color: getPkgColor(pkg) }))
 })
 const typesTotal = computed(() => typesSlices.value.reduce((s, d) => s + d.value, 0) || 1)
 
@@ -1214,6 +1232,13 @@ onMounted(async () => {
 
   document.addEventListener('keydown', onKeyDown)
 
+  // ── Load services (drives pkgDuration, getPrice, pie chart colours) ──
+  try {
+    const svcData = await api.services.list()
+    const list = svcData?.services ?? svcData ?? []
+    if (list.length > 0) dbServices.value = list
+  } catch { /* keep empty — static fallbacks will be used */ }
+
   // ── Load availability ────────────────────────────────────
   try {
     const avail = await api.admin.getAvailability()
@@ -1225,30 +1250,24 @@ onMounted(async () => {
   try {
     const dash = await api.admin.dash()
 
-    // appointments
+    // appointments — only use seed data when DB returns nothing at all
     const raw = dash?.appointments ?? dash?.data?.appointments ?? []
     let appts = raw.map(normaliseAppt)
-    // merge seed if DB is empty
     if (appts.length === 0) {
+      // DB is genuinely empty — show seed data so the UI isn't blank
       appts = SEED_APPOINTMENTS.map(a => ({ ...a }))
-    } else {
-      // still prepend seed items whose IDs don't appear in DB (demo safety)
-      const dbIds = new Set(appts.map(a => a.id))
-      SEED_APPOINTMENTS.forEach(s => { if (!dbIds.has(s.id)) appts.push({ ...s }) })
     }
     autoPromote(appts)
     allAppointments.value      = appts
     upcomingAppointments.value = appts.filter(a => a.status === 'upcoming').sort((a, b) => new Date(a.isoDate) - new Date(b.isoDate))
     historyRecords.value       = appts.slice().sort((a, b) => new Date(b.isoDate) - new Date(a.isoDate))
 
-    // messages
+    // messages — prefer DB; fall back to seeds only when DB has none
     const rawMsgs = dash?.messages ?? dash?.data?.messages ?? []
     if (rawMsgs.length > 0) {
-      const dbMsgIds = new Set(rawMsgs.map(m => String(m.id)))
-      const merged   = [...rawMsgs.map(normaliseMsg), ...SEED_MESSAGES.filter(s => !dbMsgIds.has(s.id))]
-      messages.value = merged
+      messages.value = rawMsgs.map(normaliseMsg)
     }
-    // else keep SEED_MESSAGES already set
+    // else keep SEED_MESSAGES already set as ref initialiser
   } catch {
     // API unavailable — fall back to seeds
     const seeded = autoPromote(SEED_APPOINTMENTS.map(a => ({ ...a })))
@@ -1263,8 +1282,7 @@ onMounted(async () => {
       const msgData = await api.admin.messages()
       const rawMsgs = msgData?.messages ?? msgData ?? []
       if (rawMsgs.length > 0) {
-        const dbMsgIds = new Set(rawMsgs.map(m => String(m.id)))
-        messages.value = [...rawMsgs.map(normaliseMsg), ...SEED_MESSAGES.filter(s => !dbMsgIds.has(s.id))]
+        messages.value = rawMsgs.map(normaliseMsg)
       }
     } catch { /* keep seeds */ }
   }

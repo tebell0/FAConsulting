@@ -2,7 +2,17 @@
  * routes/api.js
  * ─────────────────────────────────────────────────────────────────
  * Central API router — all routes backed by real DB queries.
- * ─────────────────────────────────────────────────────────────────
+ * ───────────────────────────────────────router.post("/admin/services", requireAdmin, async (req, res, next) => {
+  try {
+    const { name, duration, price, sort_order } = req.body;
+    // Accept either 'desc' or 'description' from the client
+    const desc = req.body.desc ?? req.body.description ?? '';
+    // Auto-generate an id if the client didn't supply one
+    const id = req.body.id || ('svc-' + Date.now());
+    if (!name || !duration || price == null) {
+      return res.status(400).json({ ok: false, error: "name, duration and price are required." });
+    }
+    await upsertService(getPool(), { id, name, duration, price, desc, sort_order });─────────────────
  */
 
 import { Router } from "express";
@@ -194,7 +204,9 @@ router.get("/admin/services", requireAdmin, async (_req, res, next) => {
 
 router.post("/admin/services", requireAdmin, async (req, res, next) => {
   try {
-    const { id, name, duration, price, desc, sort_order } = req.body;
+    const { id, name, duration, price, sort_order } = req.body;
+    // Accept either 'desc' or 'description' from the client
+    const desc = req.body.desc ?? req.body.description ?? '';
     if (!id || !name || !duration || price == null) {
       return res.status(400).json({ ok: false, error: "id, name, duration and price are required." });
     }
@@ -207,7 +219,9 @@ router.post("/admin/services", requireAdmin, async (req, res, next) => {
 
 router.put("/admin/services/:id", requireAdmin, async (req, res, next) => {
   try {
-    await upsertService(getPool(), { id: req.params.id, ...req.body });
+    // Accept either 'desc' or 'description' from the client
+    const desc = req.body.desc ?? req.body.description ?? '';
+    await upsertService(getPool(), { id: req.params.id, ...req.body, desc });
     res.json({ ok: true });
   } catch (err) {
     next(err);

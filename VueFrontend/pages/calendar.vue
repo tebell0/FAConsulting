@@ -574,11 +574,8 @@ onMounted(async () => {
       services.value = list.map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
     }
   } else {
-    // fall back to localStorage if API unavailable
-    try {
-      const raw = localStorage.getItem('services')
-      if (raw) services.value = JSON.parse(raw).map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
-    } catch { /* keep defaults */ }
+    // API unavailable — keep SVC_DEFAULTS already set on the ref
+    console.warn('[calendar] failed to load services:', svcData.reason?.message)
   }
 })
 
