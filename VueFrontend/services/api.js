@@ -107,12 +107,6 @@ const api = {
     list: () => get('/api/gallery'),
   },
 
-  // ── Services (public) ────────────────────────────────────────
-  services: {
-    /** GET /api/services — public list ordered by sort_order */
-    list: () => get('/api/services'),
-  },
-
   // ── Calendar / Bookings ──────────────────────────────────────
   calendar: {
     /** GET /api/calendar — availability + booked slots */
@@ -142,6 +136,7 @@ const api = {
     signIn: async (credentials) => {
       const data = await post('/api/admin/signin', credentials)
       if (data?.token) setAdminToken(data.token)
+      if (data?.user?.username) sessionStorage.setItem('adminUser', data.user.username)
       return data
     },
 
@@ -151,7 +146,16 @@ const api = {
     signOut: () => {
       clearAdminToken()
       sessionStorage.removeItem('adminAuth')
+      sessionStorage.removeItem('adminUser')
     },
+
+    /**
+     * POST /api/admin/change-password
+     * Verifies current password via bcrypt, hashes the new one, updates DB.
+     * @param {{ username: string, currentPassword: string, newPassword: string }} payload
+     * @returns {{ ok: boolean, message: string }}
+     */
+    changePassword: (payload) => post('/api/admin/change-password', payload),
 
     /** GET /api/admin/dash — stats + appointments + messages */
     dash: () => get('/api/admin/dash'),

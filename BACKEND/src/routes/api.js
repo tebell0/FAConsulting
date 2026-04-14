@@ -2,20 +2,11 @@
  * routes/api.js
  * ─────────────────────────────────────────────────────────────────
  * Central API router — all routes backed by real DB queries.
- * ───────────────────────────────────────router.post("/admin/services", requireAdmin, async (req, res, next) => {
-  try {
-    const { name, duration, price, sort_order } = req.body;
-    // Accept either 'desc' or 'description' from the client
-    const desc = req.body.desc ?? req.body.description ?? '';
-    // Auto-generate an id if the client didn't supply one
-    const id = req.body.id || ('svc-' + Date.now());
-    if (!name || !duration || price == null) {
-      return res.status(400).json({ ok: false, error: "name, duration and price are required." });
-    }
-    await upsertService(getPool(), { id, name, duration, price, desc, sort_order });─────────────────
+ * ─────────────────────────────────────────────────────────────────
  */
 
 import { Router } from "express";
+import bcrypt from "bcrypt";
 import { testDatabaseConnection, getPool } from "../db.js";
 import {
   getAppointments, getUpcomingAppointments, createAppointment,
@@ -88,16 +79,6 @@ router.post("/calendar/book", async (req, res, next) => {
   }
 });
 
-// ── Public services list ──────────────────────────────────────────
-router.get("/services", async (_req, res, next) => {
-  try {
-    const services = await getServices(getPool());
-    res.json({ ok: true, services });
-  } catch (err) {
-    next(err);
-  }
-});
-
 // ── Contact form ──────────────────────────────────────────────────
 router.post("/contact", async (req, res, next) => {
   try {
@@ -135,8 +116,9 @@ router.post("/admin/signin", async (req, res, next) => {
     let authorized = false;
     try {
       const admin = await getAdminByUsername(getPool(), username);
-      // NOTE: replace with bcrypt.compare() once password hashing is added
-      authorized = !!admin && password === admin.password_hash;
+      if (admin) {
+        authorized = await bcrypt.compare(password, admin.password_hash);
+      }
     } catch {
       // admin_users table not yet created — fall back to env vars
       authorized = username === process.env.ADMIN_USER && password === process.env.ADMIN_PASSWORD;
@@ -144,7 +126,36 @@ router.post("/admin/signin", async (req, res, next) => {
     if (!authorized) {
       return res.status(401).json({ ok: false, error: "Invalid credentials." });
     }
-    res.json({ ok: true, token: process.env.ADMIN_SECRET });
+    res.json({ ok: true, token: process.env.ADMIN_SECRET, user: { username } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Change Password (bcrypt) ──────────────────────────────────────
+router.post("/admin/change-password", requireAdmin, async (req, res, next) => {
+  try {
+    const { username, currentPassword, newPassword } = req.body;
+    if (!username || !currentPassword || !newPassword) {
+      return res.status(400).json({ ok: false, error: "All fields are required." });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ ok: false, error: "New password must be at least 8 characters." });
+    }
+    const admin = await getAdminByUsername(getPool(), username);
+    if (!admin) {
+      return res.status(401).json({ ok: false, error: "User not found." });
+    }
+    const match = await bcrypt.compare(currentPassword, admin.password_hash);
+    if (!match) {
+      return res.status(401).json({ ok: false, error: "Current password is incorrect." });
+    }
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await getPool().execute(
+      "UPDATE admin_users SET password_hash = ? WHERE username = ?",
+      [newHash, username]
+    );
+    res.json({ ok: true, message: "Password updated successfully." });
   } catch (err) {
     next(err);
   }
@@ -204,9 +215,7 @@ router.get("/admin/services", requireAdmin, async (_req, res, next) => {
 
 router.post("/admin/services", requireAdmin, async (req, res, next) => {
   try {
-    const { id, name, duration, price, sort_order } = req.body;
-    // Accept either 'desc' or 'description' from the client
-    const desc = req.body.desc ?? req.body.description ?? '';
+    const { id, name, duration, price, desc, sort_order } = req.body;
     if (!id || !name || !duration || price == null) {
       return res.status(400).json({ ok: false, error: "id, name, duration and price are required." });
     }
@@ -219,9 +228,7 @@ router.post("/admin/services", requireAdmin, async (req, res, next) => {
 
 router.put("/admin/services/:id", requireAdmin, async (req, res, next) => {
   try {
-    // Accept either 'desc' or 'description' from the client
-    const desc = req.body.desc ?? req.body.description ?? '';
-    await upsertService(getPool(), { id: req.params.id, ...req.body, desc });
+    await upsertService(getPool(), { id: req.params.id, ...req.body });
     res.json({ ok: true });
   } catch (err) {
     next(err);

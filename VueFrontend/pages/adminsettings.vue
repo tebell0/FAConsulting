@@ -225,7 +225,7 @@ useFonts()
 const isHovering = ref(false)
 const router = useRouter()
 
-// ── Credentials (loaded from API settings) ───────────────
+// ── Credentials (loaded from API / fallback localStorage) ─
 const adminEmail = ref('jalen@jayxcreatez.com')
 
 // ── Email form ────────────────────────────────────────────
@@ -298,7 +298,11 @@ async function savePassword() {
   if (next.length < 8) { showFeedback(passwordFeedback, 'New password must be at least 8 characters.', 'error'); return }
   if (next !== conf)   { showFeedback(passwordFeedback, 'New passwords do not match.', 'error'); return }
   try {
-    await api.admin.updateSettings({ current_password: cur, new_password: next })
+    await api.admin.changePassword({
+      username: sessionStorage.getItem('adminUser') || 'JayxCreatez',
+      currentPassword: cur,
+      newPassword: next,
+    })
     clearPasswordForm()
     showFeedback(passwordFeedback, '✓ Password updated successfully.', 'success')
   } catch (err) {
@@ -333,8 +337,11 @@ async function fetchServices() {
     const data = await api.admin.getServices()
     services.value = data?.services ?? data ?? []
   } catch {
-    // API unavailable — use hardcoded defaults
-    services.value = SVC_DEFAULTS.map(s => ({ ...s }))
+    // fall back to localStorage or defaults
+    try {
+      const raw = localStorage.getItem('services')
+      services.value = raw ? JSON.parse(raw) : SVC_DEFAULTS.map(s => ({ ...s }))
+    } catch { services.value = SVC_DEFAULTS.map(s => ({ ...s })) }
   } finally {
     svcLoading.value = false
   }
@@ -353,26 +360,26 @@ async function saveSvc() {
   if (!duration.trim())    { showFeedback(svcFeedback, 'Duration is required.', 'error'); return }
   if (!price || price < 1) { showFeedback(svcFeedback, 'Enter a valid price.', 'error'); return }
 
-  // Always send 'description' to the backend; store locally as 'desc'
   const payload = { name: name.trim(), duration: duration.trim(), price: Number(price), description: desc.trim() }
 
   try {
     if (svcEditId.value) {
-      await api.admin.updateService(svcEditId.value, payload)
-      // Patch the in-memory record immediately so the list reflects edits without a refetch
+      const updated = await api.admin.updateService(svcEditId.value, payload)
       const svc = services.value.find(s => String(s.id) === String(svcEditId.value))
-      if (svc) Object.assign(svc, { name: payload.name, duration: payload.duration, price: payload.price, desc: payload.description, description: payload.description })
+      if (svc) Object.assign(svc, { name: payload.name, duration: payload.duration, price: payload.price, desc: payload.description })
       showFeedback(svcFeedback, '✓ Service updated.', 'success')
     } else {
-      await api.admin.createService(payload)
-      // Re-fetch to get the server-assigned id and canonical data
+      const created = await api.admin.createService(payload)
+      // re-fetch to get the server-assigned id
       await fetchServices()
       showFeedback(svcFeedback, '✓ Service added.', 'success')
     }
-    cancelSvcEdit()
   } catch (err) {
     showFeedback(svcFeedback, err.message || 'Failed to save service.', 'error')
+    return
   }
+
+  cancelSvcEdit()
 }
 
 function startEditSvc(id) {
@@ -394,10 +401,6 @@ function cancelSvcEdit() {
 }
 
 async function deleteSvc(id) {
-  if (services.value.length <= 3) {
-    showFeedback(svcFeedback, 'At least 3 services must remain.', 'error')
-    return
-  }
   if (!confirm('Remove this service? This cannot be undone.')) return
   try {
     await api.admin.deleteService(id)
