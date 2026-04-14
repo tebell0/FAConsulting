@@ -173,32 +173,17 @@ import AppNav    from '../components/AppNav.vue'
 import AppFooter from '../components/AppFooter.vue'
 import { IMG }   from '../assets/index.js'
 import { useFonts } from '../composables/useFonts.js'
+import api from '@/services/api.js'
 useFonts()
 
 // ── Services ─────────────────────────────────────────────
-const services = ref([
-  {
-    name: 'The Essentials',
-    desc: 'A focused 30-minute session delivering clean, editorial portraits with a curated selection of final images.',
-    price: 295,
-    duration: '30 min',
-    key: 'essentials',
-  },
-  {
-    name: 'The Signature',
-    desc: 'An immersive 1-hour session with multiple looks, locations, and an expanded gallery of polished deliverables.',
-    price: 345,
-    duration: '1 hr',
-    key: 'signature',
-  },
-  {
-    name: 'The Elite',
-    desc: 'A full 2-hour creative session — wardrobe styling consultation, premium retouching, and an extensive final gallery.',
-    price: 427,
-    duration: '2 hr',
-    key: 'elite',
-  },
-])
+const SVC_DEFAULTS = [
+  { id: 'svc-1', name: 'The Essentials', duration: '30 min', price: 295, desc: 'A focused 30-minute session delivering clean, editorial portraits with a curated selection of final images.' },
+  { id: 'svc-2', name: 'The Signature',  duration: '1 hr',   price: 345, desc: 'An immersive 1-hour session with multiple looks, locations, and an expanded gallery of polished deliverables.' },
+  { id: 'svc-3', name: 'The Elite',      duration: '2 hr',   price: 427, desc: 'A full 2-hour creative session — wardrobe styling consultation, premium retouching, and an extensive final gallery.' },
+]
+
+const services = ref([])
 
 // ── Stats ─────────────────────────────────────────────────
 const stats = [
@@ -241,19 +226,27 @@ const testimonials = [
 let scrollObserver = null
 
 // ── Lifecycle ─────────────────────────────────────────────
-onMounted(() => {
+onMounted(async () => {
   scrollObserver = new IntersectionObserver(
     entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible') }),
     { threshold: 0.12 }
   )
   document.querySelectorAll('.fade-up').forEach(el => scrollObserver.observe(el))
 
-  // Live pricing from admin settings (localStorage)
-  const defs = { essentials: 295, signature: 345, elite: 427 }
-  services.value.forEach(s => {
-    const stored = parseInt(localStorage.getItem('price-' + s.key))
-    s.price = isNaN(stored) ? defs[s.key] : stored
-  })
+  // Load services from API → localStorage fallback → hardcoded defaults
+  try {
+    const data = await api.services.list()
+    const list = data?.services ?? data ?? []
+    services.value = list.slice(0, 3).map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
+  } catch {
+    try {
+      const raw = localStorage.getItem('services')
+      const list = raw ? JSON.parse(raw) : SVC_DEFAULTS
+      services.value = list.slice(0, 3).map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
+    } catch {
+      services.value = SVC_DEFAULTS.slice(0, 3)
+    }
+  }
 })
 
 onBeforeUnmount(() => {

@@ -78,6 +78,16 @@ router.post("/calendar/book", async (req, res, next) => {
   }
 });
 
+// ── Public services list ──────────────────────────────────────────
+router.get("/services", async (_req, res, next) => {
+  try {
+    const services = await getServices(getPool());
+    res.json({ ok: true, services });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Contact form ──────────────────────────────────────────────────
 router.post("/contact", async (req, res, next) => {
   try {

@@ -107,6 +107,12 @@ const api = {
     list: () => get('/api/gallery'),
   },
 
+  // ── Services (public) ────────────────────────────────────────
+  services: {
+    /** GET /api/services — public list ordered by sort_order */
+    list: () => get('/api/services'),
+  },
+
   // ── Calendar / Bookings ──────────────────────────────────────
   calendar: {
     /** GET /api/calendar — availability + booked slots */

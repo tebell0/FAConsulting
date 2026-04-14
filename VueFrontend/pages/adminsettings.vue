@@ -332,6 +332,7 @@ async function fetchServices() {
   try {
     const data = await api.admin.getServices()
     services.value = data?.services ?? data ?? []
+    syncServicesToStorage()
   } catch {
     // fall back to localStorage or defaults
     try {
@@ -360,16 +361,17 @@ async function saveSvc() {
 
   try {
     if (svcEditId.value) {
-      const updated = await api.admin.updateService(svcEditId.value, payload)
+      await api.admin.updateService(svcEditId.value, payload)
       const svc = services.value.find(s => String(s.id) === String(svcEditId.value))
       if (svc) Object.assign(svc, { name: payload.name, duration: payload.duration, price: payload.price, desc: payload.description })
       showFeedback(svcFeedback, '✓ Service updated.', 'success')
     } else {
-      const created = await api.admin.createService(payload)
+      await api.admin.createService(payload)
       // re-fetch to get the server-assigned id
       await fetchServices()
       showFeedback(svcFeedback, '✓ Service added.', 'success')
     }
+    syncServicesToStorage()
   } catch (err) {
     showFeedback(svcFeedback, err.message || 'Failed to save service.', 'error')
     return
@@ -397,14 +399,26 @@ function cancelSvcEdit() {
 }
 
 async function deleteSvc(id) {
+  if (services.value.length <= 3) {
+    showFeedback(svcFeedback, 'At least 3 services must remain.', 'error')
+    return
+  }
   if (!confirm('Remove this service? This cannot be undone.')) return
   try {
     await api.admin.deleteService(id)
     services.value = services.value.filter(s => String(s.id) !== String(id))
+    syncServicesToStorage()
     showFeedback(svcFeedback, '✓ Service removed.', 'success')
   } catch (err) {
     showFeedback(svcFeedback, err.message || 'Failed to remove service.', 'error')
   }
+}
+
+// ── Sync services to localStorage so public pages get live data ──
+function syncServicesToStorage() {
+  try {
+    localStorage.setItem('services', JSON.stringify(services.value))
+  } catch { /* storage unavailable */ }
 }
 
 // ── Sign Out ──────────────────────────────────────────────

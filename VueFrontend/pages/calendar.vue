@@ -319,7 +319,7 @@ const expectItems = [
   'Free reschedule up to 48 hours before session',
 ]
 
-// ── Services (from localStorage, fallback to defaults) ────
+// ── Services (loaded from API) ────────────────────────────
 const SVC_DEFAULTS = [
   { id: 'svc-1', name: 'The Essentials', duration: '30 min', price: 295,  desc: 'Focused 30-minute session. Clean, editorial portraits with a curated selection of final edited images delivered digitally.' },
   { id: 'svc-2', name: 'The Signature',  duration: '1 hr',   price: 345,  desc: 'Immersive 1-hour session with multiple outfit changes, varied setups, and an expanded gallery of polished deliverables.' },
@@ -327,22 +327,7 @@ const SVC_DEFAULTS = [
   { id: 'svc-4', name: 'The Wedding',    duration: '5 hr',   price: 1500, desc: 'Comprehensive wedding coverage. Custom packages available. Contact us for a personalized quote.' },
 ]
 
-function loadServices() {
-  try {
-    const raw = localStorage.getItem('services')
-    const list = raw ? JSON.parse(raw) : SVC_DEFAULTS.map(s => ({ ...s }))
-    // Apply individual price overrides from admin settings
-    return list.map(s => {
-      const priceKey = s.name.replace('The ', '').toLowerCase()
-      const override = parseInt(localStorage.getItem('price-' + priceKey))
-      return { ...s, price: isNaN(override) ? s.price : override }
-    })
-  } catch (e) {
-    return SVC_DEFAULTS.map(s => ({ ...s }))
-  }
-}
-
-const services = ref(loadServices())
+const services = ref(SVC_DEFAULTS.map(s => ({ ...s })))
 const selectedPackageIdx = ref(0)
 const selectedPackage = computed(() => services.value[selectedPackageIdx.value])
 
@@ -353,25 +338,20 @@ const currentMonth = ref(new Date(2026, 3, 1)) // April 2026
 const selectedDate = ref(null)
 const selectedTime = ref(null)
 
-// ── localStorage helpers ──────────────────────────────────
-function getBlockedDates() {
-  try { return JSON.parse(localStorage.getItem('blockedDates') || '[]') } catch { return [] }
-}
-function getBlockedTimes() {
-  try { return JSON.parse(localStorage.getItem('blockedTimes') || '{}') } catch { return {} }
-}
+// ── Availability state (loaded from API) ──────────────────
+const blockedDatesRef = ref([])
+const blockedTimesRef = ref({})
+const bookedSlotsRef  = ref({})
+
+function getBlockedDates()    { return blockedDatesRef.value }
+function getBlockedTimes()    { return blockedTimesRef.value }
 function getClientBookedMap() {
-  try {
-    const arr = JSON.parse(localStorage.getItem('appointments') || '[]')
-    const map = {}
-    arr.forEach(a => {
-      if (a.isoDate && a.time && a.status !== 'cancelled') {
-        if (!map[a.isoDate]) map[a.isoDate] = new Set()
-        map[a.isoDate].add(a.time)
-      }
-    })
-    return map
-  } catch { return {} }
+  // Convert bookedSlots map values to Sets for consistent .has() usage
+  const map = {}
+  for (const [iso, slots] of Object.entries(bookedSlotsRef.value)) {
+    map[iso] = new Set(slots)
+  }
+  return map
 }
 
 function toIso(date) {
@@ -572,8 +552,34 @@ async function submitBooking() {
 }
 
 // ── Lifecycle ─────────────────────────────────────────────
-onMounted(() => {
-  // no cursor setup needed — handled by AppCursor
+onMounted(async () => {
+  // Load availability and services in parallel
+  const [calData, svcData] = await Promise.allSettled([
+    api.calendar.list(),
+    api.services.list(),
+  ])
+
+  if (calData.status === 'fulfilled') {
+    const data = calData.value
+    if (data.blockedDates) blockedDatesRef.value = data.blockedDates
+    if (data.blockedTimes) blockedTimesRef.value = data.blockedTimes
+    if (data.bookedSlots)  bookedSlotsRef.value  = data.bookedSlots
+  } else {
+    console.warn('[calendar] failed to load availability:', calData.reason?.message)
+  }
+
+  if (svcData.status === 'fulfilled') {
+    const list = svcData.value?.services ?? svcData.value ?? []
+    if (list.length > 0) {
+      services.value = list.map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
+    }
+  } else {
+    // fall back to localStorage if API unavailable
+    try {
+      const raw = localStorage.getItem('services')
+      if (raw) services.value = JSON.parse(raw).map(s => ({ ...s, desc: s.desc ?? s.description ?? '' }))
+    } catch { /* keep defaults */ }
+  }
 })
 
 onBeforeUnmount(() => {

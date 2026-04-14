@@ -617,7 +617,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import AppCursor from '../components/AppCursor.vue'
 import AppNav    from '../components/AppNav.vue'
@@ -1150,6 +1150,12 @@ function drawAllCharts() {
   const is = inquirySlices.value
   drawPie(canvasInquiries.value, is.length     ? is                   : [{ label:'No data', value:1, color:'rgba(245,240,235,0.15)' }], inquiriesHoverHtml)
 }
+
+// Redraw charts reactively whenever appointments or messages change
+watch([allAppointments, messages], async () => {
+  await nextTick()
+  drawAllCharts()
+}, { deep: true })
 
 /** Normalise a raw DB appointment row → dashboard shape */
 function normaliseAppt(a) {
