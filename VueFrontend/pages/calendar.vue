@@ -353,14 +353,28 @@ const currentMonth = ref(new Date(2026, 3, 1)) // April 2026
 const selectedDate = ref(null)
 const selectedTime = ref(null)
 
-// ── localStorage helpers ──────────────────────────────────
+// ── localStorage helpers (fallback) + API-backed refs ────
+const blockedDatesFromApi = ref([])
+const blockedTimesFromApi = ref({})
+const bookedSlotsFromApi  = ref({})
+
 function getBlockedDates() {
+  if (blockedDatesFromApi.value.length) return blockedDatesFromApi.value
   try { return JSON.parse(localStorage.getItem('blockedDates') || '[]') } catch { return [] }
 }
 function getBlockedTimes() {
+  if (Object.keys(blockedTimesFromApi.value).length) return blockedTimesFromApi.value
   try { return JSON.parse(localStorage.getItem('blockedTimes') || '{}') } catch { return {} }
 }
 function getClientBookedMap() {
+  if (Object.keys(bookedSlotsFromApi.value).length) {
+    // Convert bookedSlots { '2026-04-10': ['2:00 PM'] } → same format with Set
+    const map = {}
+    for (const [iso, times] of Object.entries(bookedSlotsFromApi.value)) {
+      map[iso] = new Set(times)
+    }
+    return map
+  }
   try {
     const arr = JSON.parse(localStorage.getItem('appointments') || '[]')
     const map = {}
@@ -572,8 +586,35 @@ async function submitBooking() {
 }
 
 // ── Lifecycle ─────────────────────────────────────────────
-onMounted(() => {
-  // no cursor setup needed — handled by AppCursor
+onMounted(async () => {
+  // Load services + availability from API in parallel
+  try {
+    const [svcResult, calResult] = await Promise.allSettled([
+      api.services.list(),
+      api.calendar.list(),
+    ])
+
+    // Services — update from API, fall back to defaults
+    if (svcResult.status === 'fulfilled') {
+      const list = svcResult.value?.services ?? svcResult.value ?? []
+      if (list.length > 0) {
+        services.value = list.map(s => ({
+          ...s,
+          desc: s.desc ?? s.description ?? ''
+        }))
+      }
+    }
+
+    // Availability — blocked dates, blocked times, booked slots from API
+    if (calResult.status === 'fulfilled') {
+      const data = calResult.value
+      if (data.blockedDates)  blockedDatesFromApi.value = data.blockedDates
+      if (data.blockedTimes)  blockedTimesFromApi.value = data.blockedTimes
+      if (data.bookedSlots)   bookedSlotsFromApi.value  = data.bookedSlots
+    }
+  } catch {
+    // API unavailable — keep defaults
+  }
 })
 
 onBeforeUnmount(() => {

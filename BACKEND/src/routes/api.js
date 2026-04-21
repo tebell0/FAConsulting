@@ -269,12 +269,15 @@ router.get("/admin/services", requireAdmin, async (_req, res, next) => {
 
 router.post("/admin/services", requireAdmin, async (req, res, next) => {
   try {
-    const { id, name, duration, price, desc, sort_order } = req.body;
-    if (!id || !name || !duration || price == null) {
-      return res.status(400).json({ ok: false, error: "id, name, duration and price are required." });
+    const { id, name, duration, price, desc, description, sort_order } = req.body;
+    if (!name || !duration || price == null) {
+      return res.status(400).json({ ok: false, error: "name, duration and price are required." });
     }
-    await upsertService(getPool(), { id, name, duration, price, desc, sort_order });
-    res.status(201).json({ ok: true });
+    // Auto-generate id if not provided
+    const svcId = id || ("svc-" + Date.now());
+    const svcDesc = desc || description || "";
+    await upsertService(getPool(), { id: svcId, name, duration, price, desc: svcDesc, sort_order });
+    res.status(201).json({ ok: true, id: svcId });
   } catch (err) {
     next(err);
   }
@@ -282,7 +285,10 @@ router.post("/admin/services", requireAdmin, async (req, res, next) => {
 
 router.put("/admin/services/:id", requireAdmin, async (req, res, next) => {
   try {
-    await upsertService(getPool(), { id: req.params.id, ...req.body });
+    const body = { ...req.body };
+    // Normalise: frontend sends 'description', queries.js expects 'desc'
+    if (body.description && !body.desc) body.desc = body.description;
+    await upsertService(getPool(), { id: req.params.id, ...body });
     res.json({ ok: true });
   } catch (err) {
     next(err);
