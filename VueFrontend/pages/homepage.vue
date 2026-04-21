@@ -11,10 +11,10 @@
     <div class="hero-bg"></div>
     <div class="hero-watermark">VISUALS</div>
     <div class="hero-images">
-      <div class="hero-img-slot"></div>
-      <div class="hero-img-slot"></div>
-      <div class="hero-img-slot"></div>
-      <div class="hero-img-slot"></div>
+      <div class="hero-img-slot"><img :src="IMG.IMG_4048" alt="Hero 1" /></div>
+      <div class="hero-img-slot"><img :src="IMG.IMG_4046" alt="Hero 2" /></div>
+      <div class="hero-img-slot"><img :src="IMG.IMG_4047" alt="Hero 3" /></div>
+      <div class="hero-img-slot"><img :src="IMG.IMG_4049" alt="Hero 4" /></div>
     </div>
     <div class="hero-content">
       <div class="hero-eyebrow">Houston, TX · Est. 2020</div>
@@ -65,8 +65,8 @@
   <!-- About -->
   <div class="about-section" id="about">
     <div class="about-img-wrap fade-up">
-      <div class="about-img-main"></div>
-      <div class="about-img-accent"></div>
+      <div class="about-img-main"><img :src="IMG.IMG_4045" alt="Jalen Anthony" /></div>
+      <div class="about-img-accent"><img :src="IMG.IMG_4049" alt="Behind the lens" /></div>
       <div class="about-tag">JayxCreatez Productions</div>
     </div>
     <div class="about-text fade-up">
@@ -316,6 +316,12 @@ body {
   background: linear-gradient(135deg, rgba(200,169,126,0.07) 0%, rgba(10,10,10,0.5) 100%);
   overflow: hidden; position: relative;
 }
+.hero-img-slot img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block; filter: brightness(0.75) saturate(0.9);
+  transition: transform 0.8s ease, filter 0.5s ease;
+}
+.hero-img-slot:hover img { transform: scale(1.04); filter: brightness(0.85) saturate(1); }
 .hero-img-slot:nth-child(1) { grid-row: 1 / 3; }
 .hero-img-slot:nth-child(3) { grid-row: 2 / 4; }
 .hero-content { position: relative; z-index: 2; max-width: 520px; }
@@ -441,12 +447,22 @@ section { padding: 7rem 4rem; }
   width: 82%; height: 100%;
   background: linear-gradient(160deg, rgba(200,169,126,0.1) 0%, rgba(10,10,10,0.7) 100%);
   border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+.about-img-main img {
+  width: 100%; height: 100%; object-fit: cover; object-position: top center;
+  display: block; filter: brightness(0.88) saturate(0.92);
 }
 .about-img-accent {
   position: absolute; bottom: -2rem; right: 0;
   width: 45%; height: 45%;
   background: linear-gradient(160deg, rgba(200,169,126,0.15) 0%, rgba(10,10,10,0.5) 100%);
   border: 1px solid rgba(200,169,126,0.25);
+  overflow: hidden;
+}
+.about-img-accent img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block; filter: brightness(0.82) saturate(0.9);
 }
 .about-tag {
   position: absolute; top: 2rem; right: 1.5rem;
