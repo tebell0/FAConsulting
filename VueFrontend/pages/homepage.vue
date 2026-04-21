@@ -12,9 +12,7 @@
     <div class="hero-watermark">VISUALS</div>
     <div class="hero-images">
       <div class="hero-img-slot hero-slot-1"><img :src="IMG.IMG_4049" alt="Hero 1" /></div>
-      <div class="hero-img-slot hero-slot-2"><img :src="IMG.IMG_4046" alt="Hero 2" /></div>
-      <div class="hero-img-slot hero-slot-3"><img :src="IMG.IMG_4047" alt="Hero 3" /></div>
-      <div class="hero-img-slot hero-slot-4"><img :src="IMG.IMG_4048" alt="Hero 4" /></div>
+      <div class="hero-img-slot hero-slot-2"><img :src="IMG.IMG_4047" alt="Hero 2" /></div>
     </div>
     <!-- Gradient bleed from left text area into the image grid -->
     <div class="hero-bleed"></div>
@@ -312,7 +310,7 @@ body {
   position: absolute; top: 0; right: 0;
   width: 58%; height: 100%;
   display: grid; grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr; gap: 3px;
+  gap: 3px;
 }
 .hero-bleed {
   position: absolute; top: 0; right: 42%; width: 18%; height: 100%;
@@ -329,13 +327,8 @@ body {
   transition: transform 0.9s ease, filter 0.5s ease;
 }
 .hero-img-slot:hover img { transform: scale(1.04); filter: brightness(0.9) saturate(1); }
-/* Per-slot crop positions to keep faces/subjects in frame */
-.hero-slot-1 { grid-row: 1 / 3; }
 .hero-slot-1 img { object-position: top center; }
-.hero-slot-2 img { object-position: top center; }
-.hero-slot-3 { grid-row: 2 / 4; }
-.hero-slot-3 img { object-position: 50% 20%; }
-.hero-slot-4 img { object-position: center center; }
+.hero-slot-2 img { object-position: 50% 20%; }
 .hero-content { position: relative; z-index: 2; max-width: 520px; }
 .hero-eyebrow {
   font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
