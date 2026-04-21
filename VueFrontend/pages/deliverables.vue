@@ -184,7 +184,7 @@
             <div class="dlv-summary-row">
               <span class="dlv-summary-key">Secure link</span>
               <span class="dlv-summary-val" :class="secureLink ? 'status-ok' : 'status-warn'">
-                {{ secureLink ? 'Generated ✓' : 'Not generated' }}
+                {{ secureLink ? 'Generated ✓' : 'Auto-generated on send' }}
               </span>
             </div>
             <div class="dlv-summary-row">
@@ -404,7 +404,7 @@ const uploadVisible  = ref(false)
 const uploadPct      = ref(0)
 const uploadStatus   = ref('')   // status label shown above the bar
 const sent           = ref(false)
-const sendDisabled   = computed(() => !secureLink.value || sent.value || uploading.value)
+const sendDisabled   = computed(() => !selectedApptId.value || !selectedFiles.value.length || sent.value || uploading.value)
 const uploading      = ref(false)
 
 /**
@@ -430,13 +430,19 @@ function uploadFileToS3(uploadUrl, file, onProgress) {
 }
 
 async function sendPackage() {
-  if (!secureLink.value) {
-    alert('Please generate a secure link before sending.')
-    return
-  }
   if (!selectedApptId.value) {
     alert('Please select a client appointment.')
     return
+  }
+  if (!selectedFiles.value.length) {
+    alert('Please select at least one file to upload.')
+    return
+  }
+
+  // Auto-generate the delivery link if not already done
+  if (!secureLink.value) {
+    secureLink.value  = buildDeliveryLink(selectedApptId.value)
+    deliveryUrl.value = secureLink.value
   }
 
   uploading.value     = true
