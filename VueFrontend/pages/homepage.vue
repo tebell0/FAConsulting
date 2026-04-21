@@ -9,7 +9,7 @@
   <!-- Hero -->
   <section class="hero">
     <div class="hero-bg"></div>
-    <div class="hero-watermark">VISUALS</div>
+
     <div class="hero-images">
       <div class="hero-img-slot hero-slot-1"><img :src="IMG.IMG_4049" alt="Hero 1" /></div>
       <div class="hero-img-slot hero-slot-2"><img :src="IMG.IMG_4047" alt="Hero 2" /></div>
