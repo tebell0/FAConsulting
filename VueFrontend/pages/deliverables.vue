@@ -96,49 +96,28 @@
         </div>
       </div>
 
-      <!-- RIGHT: Link + Summary + Send -->
+      <!-- RIGHT: Options + Summary + Send -->
       <div class="dlv-sidebar">
 
-        <!-- Secure Link Card -->
+        <!-- Options Card -->
         <div class="dlv-card">
-          <h2 class="dlv-card-title">Secure Link</h2>
-          <p class="dlv-card-sub">Generate a private link to share with the client.</p>
+          <h2 class="dlv-card-title">Delivery Options</h2>
+          <p class="dlv-card-sub">Optionally protect the gallery with a password before sending.</p>
 
-          <div class="link-row">
-            <input
-              type="text"
-              class="link-input"
-              v-model="secureLink"
-              placeholder="Click Generate to create link"
-              readonly
-              @mouseenter="isHovering=true" @mouseleave="isHovering=false"
-            />
-            <button
-              class="link-copy-btn"
-              :class="{ copied: linkCopied }"
-              @click="copyLink"
-              @mouseenter="isHovering=true" @mouseleave="isHovering=false"
-            >{{ linkCopied ? 'Copied!' : 'Copy' }}</button>
-          </div>
-
-          <div style="margin-top:0.8rem;">
-            <button class="btn-back" style="font-size:0.65rem;padding:0.65rem 1.4rem;" @click="generateLink"
-              @mouseenter="isHovering=true" @mouseleave="isHovering=false">
-              Generate Link
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/></svg>
-            </button>
-          </div>
-
-          <div class="link-options">
+          <div class="link-options" style="grid-template-columns:1fr; gap:1rem;">
             <div>
-              <span class="link-option-label">Expires</span>
-              <input type="date" class="link-option-input" v-model="linkExpiry"
-                @mouseenter="isHovering=true" @mouseleave="isHovering=false" />
-            </div>
-            <div>
-              <span class="link-option-label">Password (optional)</span>
-              <input type="password" class="link-option-input" v-model="linkPassword" placeholder="••••••"
-                @mouseenter="isHovering=true" @mouseleave="isHovering=false" />
+              <span class="link-option-label">Password Protection (optional)</span>
+              <input
+                type="password"
+                class="link-option-input"
+                v-model="linkPassword"
+                placeholder="Leave blank for no password"
+                style="width:100%;"
+                @mouseenter="isHovering=true" @mouseleave="isHovering=false"
+              />
+              <p style="font-size:0.62rem;color:rgba(245,240,235,0.3);margin-top:0.4rem;">
+                If set, the client must enter this password to view their gallery.
+              </p>
             </div>
           </div>
         </div>
@@ -182,14 +161,10 @@
               <span class="dlv-summary-val">{{ summarySize }}</span>
             </div>
             <div class="dlv-summary-row">
-              <span class="dlv-summary-key">Secure link</span>
-              <span class="dlv-summary-val" :class="secureLink ? 'status-ok' : 'status-warn'">
-                {{ secureLink ? 'Generated ✓' : 'Auto-generated on send' }}
+              <span class="dlv-summary-key">Password</span>
+              <span class="dlv-summary-val" :class="linkPassword ? 'status-ok' : ''">
+                {{ linkPassword ? 'Protected ✓' : 'None' }}
               </span>
-            </div>
-            <div class="dlv-summary-row">
-              <span class="dlv-summary-key">Payment</span>
-              <span class="dlv-summary-val status-ok">Confirmed</span>
             </div>
           </div>
 
@@ -201,23 +176,43 @@
               @click="sendPackage"
               @mouseenter="isHovering=true" @mouseleave="isHovering=false"
             >
-              Send to Client
+              Upload &amp; Send to Client
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M2 8h12M8 2l6 6-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
           </div>
 
-          <!-- Success state -->
+          <!-- Success state — shows generated link after send -->
           <div class="dlv-success" :class="{ visible: sent }">
             <div class="dlv-success-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M5 12l5 5L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
-            <div class="dlv-success-title">Package Sent</div>
-            <p class="dlv-success-sub">The client has been notified and their gallery link is now active.</p>
-            <RouterLink to="/admindash" class="btn-back" style="margin-top:0.5rem;font-size:0.65rem;padding:0.65rem 1.4rem;"
+            <div class="dlv-success-title">Package Sent!</div>
+            <p class="dlv-success-sub">Share this link with your client:</p>
+
+            <!-- Generated link displayed after successful send -->
+            <div class="dlv-success-link-row">
+              <input
+                type="text"
+                class="dlv-success-link-input"
+                :value="secureLink"
+                readonly
+              />
+              <button
+                class="dlv-success-copy-btn"
+                :class="{ copied: linkCopied }"
+                @click="copyLink"
+                @mouseenter="isHovering=true" @mouseleave="isHovering=false"
+              >{{ linkCopied ? '✓ Copied!' : 'Copy Link' }}</button>
+            </div>
+            <p v-if="linkPassword" style="font-size:0.68rem;color:rgba(245,240,235,0.4);margin-top:0.5rem;">
+              Password: <strong style="color:var(--warm);">{{ linkPassword }}</strong>
+            </p>
+
+            <RouterLink to="/admindash" class="btn-back" style="margin-top:1.2rem;font-size:0.65rem;padding:0.65rem 1.4rem;"
               @mouseenter="isHovering=true" @mouseleave="isHovering=false">
               ← Back to Dashboard
             </RouterLink>
@@ -665,11 +660,16 @@ a.dlv-summary-link:hover { color: var(--warm); }
 .dlv-send-btn:hover svg { transform: translateX(4px); }
 
 /* Success state */
-.dlv-success { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem 2rem; gap: 1rem; }
+.dlv-success { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem 1rem; gap: 0.75rem; }
 .dlv-success.visible { display: flex; }
 .dlv-success-icon { width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; color: var(--success); }
 .dlv-success-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; color: var(--off-white); }
 .dlv-success-sub { font-size: 0.78rem; color: rgba(245,240,235,0.4); line-height: 1.6; max-width: 300px; }
+.dlv-success-link-row { display: flex; gap: 0.5rem; width: 100%; align-items: stretch; margin-top: 0.25rem; }
+.dlv-success-link-input { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: var(--warm); font-family: 'DM Sans', sans-serif; font-size: 0.68rem; padding: 0.7rem 0.8rem; outline: none; min-width: 0; }
+.dlv-success-copy-btn { flex-shrink: 0; background: rgba(200,169,126,0.12); border: 1px solid rgba(200,169,126,0.3); color: var(--warm); font-family: 'DM Sans', sans-serif; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0 1rem; cursor: none; transition: background 0.2s, border-color 0.2s; white-space: nowrap; }
+.dlv-success-copy-btn:hover { background: rgba(200,169,126,0.22); border-color: var(--warm); }
+.dlv-success-copy-btn.copied { color: var(--success); border-color: var(--success); background: rgba(126,200,158,0.08); }
 
 /* ── Responsive ── */
 @media (max-width: 960px) {
