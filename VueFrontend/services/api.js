@@ -139,12 +139,13 @@ const api = {
   delivery: {
     /**
      * GET /api/delivery/:id
-     * Returns presigned download URLs for all files in the appointment's
-     * S3 delivery folder. No admin auth required.
      * @param {string} appointmentId
-     * @returns {{ ok, client, package, files: { key, fileName, url }[] }}
+     * @param {string} [password] — optional gallery password
      */
-    get: (appointmentId) => get(`/api/delivery/${encodeURIComponent(appointmentId)}`),
+    get: (appointmentId, password = '') => {
+      const qs = password ? `?pwd=${encodeURIComponent(password)}` : ''
+      return get(`/api/delivery/${encodeURIComponent(appointmentId)}${qs}`)
+    },
   },
 
   // ── Admin ────────────────────────────────────────────────────
@@ -189,7 +190,7 @@ const api = {
     deliverables: () => get('/api/admin/deliverables'),
 
     /** PUT /api/admin/deliverables/:id/link */
-    setDeliveryLink: (id, link) => put(`/api/admin/deliverables/${id}/link`, { link }),
+    setDeliveryLink: (id, link, password = '') => put(`/api/admin/deliverables/${id}/link`, { link, password: password || null }),
 
     /** GET /api/admin/services */
     getServices: () => get('/api/admin/services'),

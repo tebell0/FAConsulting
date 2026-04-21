@@ -165,10 +165,10 @@ export async function updateAppointmentStatus(pool, id, status) {
   await q(pool, `UPDATE appointments SET status = ? WHERE id = ?`, [status, id])
 }
 
-export async function updateDeliveryLink(pool, id, link) {
+export async function updateDeliveryLink(pool, id, link, password = null) {
   await q(pool, `
-    UPDATE appointments SET delivery_link = ?, status = 'delivered' WHERE id = ?
-  `, [link, id])
+    UPDATE appointments SET delivery_link = ?, delivery_password = ?, status = 'delivered' WHERE id = ?
+  `, [link, password, id])
 }
 
 // ── Dashboard stats ───────────────────────────────────────────────

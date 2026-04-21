@@ -501,8 +501,8 @@ async function sendPackage() {
       uploadStatus.value = 'Saving delivery link…'
     }
 
-    // ── Persist the delivery link in the DB ───────────────
-    await api.admin.setDeliveryLink(selectedApptId.value, secureLink.value)
+    // ── Persist the delivery link + optional password in the DB ──
+    await api.admin.setDeliveryLink(selectedApptId.value, secureLink.value, linkPassword.value || '')
 
     uploadPct.value    = 100
     uploadStatus.value = 'Complete!'

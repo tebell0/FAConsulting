@@ -114,12 +114,24 @@ router.get("/delivery/:id", async (req, res, next) => {
   try {
     const pool = getPool();
     const [rows] = await pool.query(
-      "SELECT id, name, package, delivery_link FROM appointments WHERE id = ? LIMIT 1",
+      "SELECT id, name, package, delivery_link, delivery_password FROM appointments WHERE id = ? LIMIT 1",
       [req.params.id]
     );
     const appt = rows[0];
     if (!appt || !appt.delivery_link) {
       return res.status(404).json({ ok: false, error: "Delivery not found." });
+    }
+
+    // If password-protected, require it as a query param
+    if (appt.delivery_password) {
+      const supplied = req.query.pwd || "";
+      if (supplied !== appt.delivery_password) {
+        return res.status(401).json({
+          ok: false,
+          error: "Password required.",
+          passwordRequired: true,
+        });
+      }
     }
 
     // List all objects under this appointment's delivery prefix
@@ -139,6 +151,7 @@ router.get("/delivery/:id", async (req, res, next) => {
       ok: true,
       client:   appt.name,
       package:  appt.package,
+      passwordRequired: false,
       files,
     });
   } catch (err) {
@@ -249,9 +262,9 @@ router.get("/admin/deliverables", requireAdmin, async (_req, res, next) => {
 
 router.put("/admin/deliverables/:id/link", requireAdmin, async (req, res, next) => {
   try {
-    const { link } = req.body;
+    const { link, password } = req.body;
     if (!link) return res.status(400).json({ ok: false, error: "link is required." });
-    await updateDeliveryLink(getPool(), req.params.id, link);
+    await updateDeliveryLink(getPool(), req.params.id, link, password || null);
     res.json({ ok: true });
   } catch (err) {
     next(err);

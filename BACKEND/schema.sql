@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS appointments (
   session_type  VARCHAR(60)   NOT NULL DEFAULT '',
   notes         TEXT,
   ref           VARCHAR(20)   NOT NULL DEFAULT '',
-  delivery_link VARCHAR(255)  DEFAULT NULL,
+  delivery_link     VARCHAR(255)  DEFAULT NULL,
+  delivery_password VARCHAR(100)  DEFAULT NULL,
   created_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_status   (status),
   INDEX idx_iso_date (iso_date)

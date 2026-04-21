@@ -10,6 +10,33 @@
       <p class="delivery-loading-text">Loading your gallery…</p>
     </div>
 
+    <!-- Password gate -->
+    <div v-else-if="needsPassword" class="delivery-center">
+      <div class="delivery-lock-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 class="delivery-error-title">Protected Gallery</h2>
+      <p class="delivery-error-sub">This gallery is password protected. Enter the password to view your photos.</p>
+      <div class="delivery-pw-form">
+        <input
+          v-model="enteredPassword"
+          type="password"
+          class="delivery-pw-input"
+          placeholder="Enter password"
+          @keyup.enter="submitPassword"
+          autofocus
+        />
+        <button class="delivery-pw-btn" @click="submitPassword" :disabled="!enteredPassword">
+          View Gallery
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <p v-if="passwordError" class="delivery-pw-error">Incorrect password. Please try again.</p>
+      </div>
+    </div>
+
     <!-- Error state -->
     <div v-else-if="error" class="delivery-center">
       <div class="delivery-error-icon">
@@ -91,14 +118,17 @@ import { useFonts } from '../composables/useFonts.js'
 import api from '@/services/api.js'
 useFonts()
 
-const isHovering  = ref(false)
-const route       = useRoute()
+const isHovering     = ref(false)
+const route          = useRoute()
 
-const loading     = ref(true)
-const error       = ref(false)
-const clientName  = ref('')
-const packageName = ref('')
-const files       = ref([])
+const loading        = ref(true)
+const error          = ref(false)
+const needsPassword  = ref(false)
+const passwordError  = ref(false)
+const enteredPassword = ref('')
+const clientName     = ref('')
+const packageName    = ref('')
+const files          = ref([])
 
 const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'heic']
 
@@ -107,29 +137,54 @@ function isImage(fileName) {
   return IMAGE_EXTS.includes(ext)
 }
 
-onMounted(async () => {
+async function loadGallery(password = '') {
   const appointmentId = route.params.id
-  if (!appointmentId) {
-    error.value   = true
-    loading.value = false
-    return
-  }
+  if (!appointmentId) { error.value = true; loading.value = false; return }
 
   try {
-    const data = await api.delivery.get(appointmentId)
+    const data = await api.delivery.get(appointmentId, password)
+
+    if (data?.passwordRequired) {
+      needsPassword.value = true
+      loading.value = false
+      return
+    }
+
     if (!data?.ok || !data.files?.length) {
       error.value = true
     } else {
       clientName.value  = data.client || 'Your Gallery'
       packageName.value = data.package || ''
       files.value       = data.files
+      needsPassword.value = false
+      passwordError.value = false
     }
-  } catch {
-    error.value = true
+  } catch (err) {
+    // 401 = wrong password or password required
+    if (err.status === 401) {
+      if (password) {
+        // Wrong password entered
+        passwordError.value = true
+        needsPassword.value = true
+      } else {
+        needsPassword.value = true
+      }
+    } else {
+      error.value = true
+    }
   } finally {
     loading.value = false
   }
-})
+}
+
+async function submitPassword() {
+  if (!enteredPassword.value) return
+  loading.value = true
+  passwordError.value = false
+  await loadGallery(enteredPassword.value)
+}
+
+onMounted(() => loadGallery())
 </script>
 
 <style>
@@ -165,6 +220,34 @@ onMounted(async () => {
   color: rgba(245,240,235,0.4);
   letter-spacing: 0.08em;
 }
+
+.delivery-lock-icon { color: rgba(200,169,126,0.6); margin-bottom: 1.5rem; }
+.delivery-pw-form {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.75rem; margin-top: 1.5rem; width: 100%; max-width: 320px;
+}
+.delivery-pw-input {
+  width: 100%; padding: 0.85rem 1rem;
+  background: rgba(245,240,235,0.04);
+  border: 1px solid rgba(200,169,126,0.25);
+  color: #f5f0eb; font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem; outline: none; text-align: center;
+  letter-spacing: 0.1em; transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.delivery-pw-input:focus { border-color: #c8a97e; }
+.delivery-pw-input::placeholder { color: rgba(245,240,235,0.2); letter-spacing: 0.05em; }
+.delivery-pw-btn {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  background: #c8a97e; color: #0a0a0a;
+  font-family: 'DM Sans', sans-serif; font-size: 0.72rem;
+  font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 0.85rem 2rem; border: none; cursor: pointer;
+  transition: background 0.2s; width: 100%; justify-content: center;
+}
+.delivery-pw-btn:hover:not(:disabled) { background: #dbbf94; }
+.delivery-pw-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.delivery-pw-error { font-size: 0.75rem; color: #e07e7e; margin-top: 0.2rem; }
 
 .delivery-error-icon { color: rgba(200,169,126,0.5); margin-bottom: 1.5rem; }
 .delivery-error-title {
