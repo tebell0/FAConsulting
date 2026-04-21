@@ -11,11 +11,13 @@
     <div class="hero-bg"></div>
     <div class="hero-watermark">VISUALS</div>
     <div class="hero-images">
-      <div class="hero-img-slot"><img :src="IMG.IMG_4048" alt="Hero 1" /></div>
-      <div class="hero-img-slot"><img :src="IMG.IMG_4046" alt="Hero 2" /></div>
-      <div class="hero-img-slot"><img :src="IMG.IMG_4047" alt="Hero 3" /></div>
-      <div class="hero-img-slot"><img :src="IMG.IMG_4049" alt="Hero 4" /></div>
+      <div class="hero-img-slot hero-slot-1"><img :src="IMG.IMG_4049" alt="Hero 1" /></div>
+      <div class="hero-img-slot hero-slot-2"><img :src="IMG.IMG_4046" alt="Hero 2" /></div>
+      <div class="hero-img-slot hero-slot-3"><img :src="IMG.IMG_4047" alt="Hero 3" /></div>
+      <div class="hero-img-slot hero-slot-4"><img :src="IMG.IMG_4048" alt="Hero 4" /></div>
     </div>
+    <!-- Gradient bleed from left text area into the image grid -->
+    <div class="hero-bleed"></div>
     <div class="hero-content">
       <div class="hero-eyebrow">Houston, TX · Est. 2020</div>
       <h1 class="hero-headline">Where <em>Vision</em><br />Becomes Reality</h1>
@@ -308,22 +310,32 @@ body {
 }
 .hero-images {
   position: absolute; top: 0; right: 0;
-  width: 52%; height: 100%;
+  width: 58%; height: 100%;
   display: grid; grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr; gap: 3px;
 }
+.hero-bleed {
+  position: absolute; top: 0; right: 42%; width: 18%; height: 100%;
+  background: linear-gradient(to right, var(--black) 0%, transparent 100%);
+  z-index: 1; pointer-events: none;
+}
 .hero-img-slot {
-  background: linear-gradient(135deg, rgba(200,169,126,0.07) 0%, rgba(10,10,10,0.5) 100%);
+  background: #0a0a0a;
   overflow: hidden; position: relative;
 }
 .hero-img-slot img {
   width: 100%; height: 100%; object-fit: cover;
-  display: block; filter: brightness(0.75) saturate(0.9);
-  transition: transform 0.8s ease, filter 0.5s ease;
+  display: block; filter: brightness(0.78) saturate(0.88);
+  transition: transform 0.9s ease, filter 0.5s ease;
 }
-.hero-img-slot:hover img { transform: scale(1.04); filter: brightness(0.85) saturate(1); }
-.hero-img-slot:nth-child(1) { grid-row: 1 / 3; }
-.hero-img-slot:nth-child(3) { grid-row: 2 / 4; }
+.hero-img-slot:hover img { transform: scale(1.04); filter: brightness(0.9) saturate(1); }
+/* Per-slot crop positions to keep faces/subjects in frame */
+.hero-slot-1 { grid-row: 1 / 3; }
+.hero-slot-1 img { object-position: top center; }
+.hero-slot-2 img { object-position: top center; }
+.hero-slot-3 { grid-row: 2 / 4; }
+.hero-slot-3 img { object-position: 50% 20%; }
+.hero-slot-4 img { object-position: center center; }
 .hero-content { position: relative; z-index: 2; max-width: 520px; }
 .hero-eyebrow {
   font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
