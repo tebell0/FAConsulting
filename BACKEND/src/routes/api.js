@@ -177,52 +177,47 @@ function requireAdmin(req, res, next) {
 router.post("/admin/signin", async (req, res, next) => {
   try {
     const { username, password } = req.body;
+
     if (!username || !password) {
-      return res.status(400).json({ ok: false, error: "username and password are required." });
+      return res.status(400).json({
+        ok: false,
+        error: "username and password are required."
+      });
     }
+
     let authorized = false;
+
     try {
       const admin = await getAdminByUsername(getPool(), username);
-      if (admin) {
-        authorized = await bcrypt.compare(password, admin.password_hash);
-      }
-    } catch {
-      // admin_users table not yet created — fall back to env vars
-      authorized = username === process.env.ADMIN_USER && password === process.env.ADMIN_PASSWORD;
-    }
-    if (!authorized) {
-      return res.status(401).json({ ok: false, error: "Invalid credentials." });
-    }
-    res.json({ ok: true, token: process.env.ADMIN_SECRET, user: { username } });
-  } catch (err) {
-    next(err);
-  }
-});
 
-// ── Change Password (bcrypt) ──────────────────────────────────────
-router.post("/admin/change-password", requireAdmin, async (req, res, next) => {
-  try {
-    const { username, currentPassword, newPassword } = req.body;
-    if (!username || !currentPassword || !newPassword) {
-      return res.status(400).json({ ok: false, error: "All fields are required." });
+      if (admin) {
+        // Use DB password if user exists
+        authorized = await bcrypt.compare(password, admin.password_hash);
+      } else {
+        authorized =
+          username === process.env.ADMIN_USER &&
+          password === process.env.ADMIN_PASSWORD;
+      }
+    } catch (err) {
+      // DB error fallback
+      authorized =
+        username === process.env.ADMIN_USER &&
+        password === process.env.ADMIN_PASSWORD;
     }
-    if (newPassword.length < 8) {
-      return res.status(400).json({ ok: false, error: "New password must be at least 8 characters." });
+
+    if (!authorized) {
+      return res.status(401).json({
+        ok: false,
+        error: "Invalid credentials."
+      });
     }
-    const admin = await getAdminByUsername(getPool(), username);
-    if (!admin) {
-      return res.status(401).json({ ok: false, error: "User not found." });
-    }
-    const match = await bcrypt.compare(currentPassword, admin.password_hash);
-    if (!match) {
-      return res.status(401).json({ ok: false, error: "Current password is incorrect." });
-    }
-    const newHash = await bcrypt.hash(newPassword, 10);
-    await getPool().execute(
-      "UPDATE admin_users SET password_hash = ? WHERE username = ?",
-      [newHash, username]
-    );
-    res.json({ ok: true, message: "Password updated successfully." });
+
+    res.json({
+      ok: true,
+      token: process.env.ADMIN_SECRET,
+      user: { username }
+    });
+
   } catch (err) {
     next(err);
   }
