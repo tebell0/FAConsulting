@@ -6,6 +6,7 @@
  */
 
 import { Router } from "express";
+import bcrypt from "bcrypt";
 import { testDatabaseConnection, getPool } from "../db.js";
 import {
   getAppointments, getUpcomingAppointments, createAppointment,
@@ -16,7 +17,7 @@ import {
 } from "../queries.js";
 import {
   getUploadUrl, getSignedDownloadUrl, deleteS3Object,
-  buildFolderUrl, buildDeliveryPrefix,
+  buildFolderUrl, buildDeliveryPrefix, listObjects,
 } from "../s3.js";
 
 const router = Router();
@@ -31,21 +32,21 @@ router.get("/health", async (_req, res, next) => {
   }
 });
 
-// ── Gallery ───────────────────────────────────────────────────────
-router.get("/gallery", async (_req, res, next) => {
+// ── Public Services (no auth — used by homepage, calendar, etc.) ──
+router.get("/services", async (_req, res, next) => {
   try {
-    const items = await getGalleryItems(getPool());
-    res.json({ ok: true, items });
+    const services = await getServices(getPool());
+    res.json({ ok: true, services });
   } catch (err) {
     next(err);
   }
 });
 
-// ── Services (public — needed by booking page) ────────────────────
-router.get("/services", async (_req, res, next) => {
+// ── Gallery ───────────────────────────────────────────────────────
+router.get("/gallery", async (_req, res, next) => {
   try {
-    const services = await getServices(getPool());
-    res.json({ ok: true, services });
+    const items = await getGalleryItems(getPool());
+    res.json({ ok: true, items });
   } catch (err) {
     next(err);
   }
@@ -102,52 +103,118 @@ router.post("/contact", async (req, res, next) => {
   }
 });
 
-// ── Admin auth middleware ──────────────────────────────────────────
-function requireAdmin(req, res, next) {
-  const secret = process.env.ADMIN_SECRET;
-  if (!secret) {
-    // ADMIN_SECRET not configured — refuse all admin access
-    return res.status(503).json({ ok: false, error: "Admin authentication is not configured on this server." });
+// ══════════════════════════════════════════════════════════════════
+//  PUBLIC DELIVERY PAGE — client views their delivered photos
+//  GET /api/delivery/:id
+//  Returns presigned GET URLs for every file in the appointment's
+//  S3 delivery folder. No admin auth needed — the appointment id
+//  (e.g. "jxc-2026-4821") acts as a bearer token.
+// ══════════════════════════════════════════════════════════════════
+router.get("/delivery/:id", async (req, res, next) => {
+  try {
+    const pool = getPool();
+    const [rows] = await pool.query(
+      "SELECT id, name, package, delivery_link FROM appointments WHERE id = ? LIMIT 1",
+      [req.params.id]
+    );
+    const appt = rows[0];
+    if (!appt || !appt.delivery_link) {
+      return res.status(404).json({ ok: false, error: "Delivery not found." });
+    }
+
+    // List all objects under this appointment's delivery prefix
+    const prefix = buildDeliveryPrefix(appt.id);
+    const keys   = await listObjects(prefix);
+
+    // Generate a presigned GET URL for each file (valid 7 days)
+    const files = await Promise.all(
+      keys.map(async (key) => {
+        const url      = await getSignedDownloadUrl(key, 604800);
+        const fileName = key.split("/").pop();
+        return { key, fileName, url };
+      })
+    );
+
+    res.json({
+      ok: true,
+      client:   appt.name,
+      package:  appt.package,
+      files,
+    });
+  } catch (err) {
+    next(err);
   }
+});
+
+
+// ── Admin ─────────────────────────────────────────────────────────
+
+/**
+ * Simple middleware that checks for a valid admin session token.
+ * Replace with a proper JWT / session strategy when ready.
+ */
+function requireAdmin(req, res, next) {
   const token = req.headers["x-admin-token"];
-  if (!token || token !== secret) {
+  if (!token || token !== process.env.ADMIN_SECRET) {
     return res.status(401).json({ ok: false, error: "Unauthorized." });
   }
   next();
 }
 
-// ── Admin sign-in ─────────────────────────────────────────────────
 router.post("/admin/signin", async (req, res, next) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) {
       return res.status(400).json({ ok: false, error: "username and password are required." });
     }
-
-    if (!process.env.ADMIN_SECRET) {
-      return res.status(503).json({ ok: false, error: "Admin authentication is not configured on this server." });
-    }
-
     let authorized = false;
     try {
       const admin = await getAdminByUsername(getPool(), username);
-      authorized = !!admin && password === admin.password_hash;
+      if (admin) {
+        authorized = await bcrypt.compare(password, admin.password_hash);
+      }
     } catch {
-      // admin_users table not yet seeded — fall back to env vars
+      // admin_users table not yet created — fall back to env vars
       authorized = username === process.env.ADMIN_USER && password === process.env.ADMIN_PASSWORD;
     }
-
     if (!authorized) {
       return res.status(401).json({ ok: false, error: "Invalid credentials." });
     }
-
-    res.json({ ok: true, token: process.env.ADMIN_SECRET });
+    res.json({ ok: true, token: process.env.ADMIN_SECRET, user: { username } });
   } catch (err) {
     next(err);
   }
 });
 
-// ── Admin dashboard ───────────────────────────────────────────────
+// ── Change Password (bcrypt) ──────────────────────────────────────
+router.post("/admin/change-password", requireAdmin, async (req, res, next) => {
+  try {
+    const { username, currentPassword, newPassword } = req.body;
+    if (!username || !currentPassword || !newPassword) {
+      return res.status(400).json({ ok: false, error: "All fields are required." });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ ok: false, error: "New password must be at least 8 characters." });
+    }
+    const admin = await getAdminByUsername(getPool(), username);
+    if (!admin) {
+      return res.status(401).json({ ok: false, error: "User not found." });
+    }
+    const match = await bcrypt.compare(currentPassword, admin.password_hash);
+    if (!match) {
+      return res.status(401).json({ ok: false, error: "Current password is incorrect." });
+    }
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await getPool().execute(
+      "UPDATE admin_users SET password_hash = ? WHERE username = ?",
+      [newHash, username]
+    );
+    res.json({ ok: true, message: "Password updated successfully." });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/admin/dash", requireAdmin, async (_req, res, next) => {
   try {
     const pool = getPool();
@@ -171,7 +238,6 @@ router.get("/admin/messages", requireAdmin, async (_req, res, next) => {
   }
 });
 
-// ── Admin deliverables ────────────────────────────────────────────
 router.get("/admin/deliverables", requireAdmin, async (_req, res, next) => {
   try {
     const deliverables = await getAppointments(getPool());
@@ -192,7 +258,6 @@ router.put("/admin/deliverables/:id/link", requireAdmin, async (req, res, next) 
   }
 });
 
-// ── Admin services ────────────────────────────────────────────────
 router.get("/admin/services", requireAdmin, async (_req, res, next) => {
   try {
     const services = await getServices(getPool());
@@ -233,7 +298,6 @@ router.delete("/admin/services/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
-// ── Admin settings ────────────────────────────────────────────────
 router.get("/admin/settings", requireAdmin, async (_req, res, next) => {
   try {
     const settings = await getSettings(getPool());
@@ -256,7 +320,6 @@ router.put("/admin/settings", requireAdmin, async (req, res, next) => {
   }
 });
 
-// ── Admin availability ────────────────────────────────────────────
 router.get("/admin/availability", requireAdmin, async (_req, res, next) => {
   try {
     const availability = await getAvailability(getPool());
@@ -285,9 +348,9 @@ router.put("/admin/availability", requireAdmin, async (req, res, next) => {
  * Body: { appointmentId, fileName, contentType }
  * Returns: { ok, uploadUrl, key, publicUrl, folderUrl }
  *
- * The browser PUTs the file bytes directly to uploadUrl.
- * After all uploads complete, call PUT /admin/deliverables/:id/link
- * with folderUrl to record the delivery link on the appointment.
+ * The browser then PUTs the file bytes directly to `uploadUrl`.
+ * After all files are uploaded, call PUT /admin/deliverables/:id/link
+ * with `folderUrl` to record the delivery link.
  */
 router.post("/admin/upload-url", requireAdmin, async (req, res, next) => {
   try {
@@ -295,16 +358,22 @@ router.post("/admin/upload-url", requireAdmin, async (req, res, next) => {
     if (!appointmentId || !fileName || !contentType) {
       return res.status(400).json({ ok: false, error: "appointmentId, fileName and contentType are required." });
     }
+    // Sanitise fileName so it's safe for S3 key
     const safeName = fileName.replace(/[^a-zA-Z0-9._\-]/g, "_");
     const prefix   = buildDeliveryPrefix(appointmentId);
     const key      = `${prefix}${safeName}`;
     const result   = await getUploadUrl(key, contentType);
+
+    // Build the client-facing delivery URL (our API endpoint, not raw S3)
+    const deliveryPageUrl = `/delivery/${encodeURIComponent(appointmentId)}`;
+
     res.json({
       ok:        true,
       uploadUrl: result.uploadUrl,
       key:       result.key,
       publicUrl: result.publicUrl,
       folderUrl: buildFolderUrl(prefix),
+      deliveryPageUrl,
     });
   } catch (err) {
     next(err);
@@ -314,7 +383,7 @@ router.post("/admin/upload-url", requireAdmin, async (req, res, next) => {
 // ── S3 — presigned download URL ───────────────────────────────────
 /**
  * GET /api/admin/download-url?key=deliverables/jxc-001/photo.jpg
- * Returns a short-lived signed GET URL for a private S3 object.
+ * Returns a short-lived signed GET URL for a private object.
  */
 router.get("/admin/download-url", requireAdmin, async (req, res, next) => {
   try {
@@ -322,6 +391,30 @@ router.get("/admin/download-url", requireAdmin, async (req, res, next) => {
     if (!key) return res.status(400).json({ ok: false, error: "key query param is required." });
     const url = await getSignedDownloadUrl(key);
     res.json({ ok: true, url });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── S3 — list objects in a delivery folder ───────────────────────
+/**
+ * GET /api/admin/delivery-files/:appointmentId
+ * Returns presigned GET URLs for all files in the appointment's S3 folder.
+ */
+router.get("/admin/delivery-files/:appointmentId", requireAdmin, async (req, res, next) => {
+  try {
+    const prefix = buildDeliveryPrefix(req.params.appointmentId);
+    const keys   = await listObjects(prefix);
+
+    const files = await Promise.all(
+      keys.map(async (key) => {
+        const url      = await getSignedDownloadUrl(key, 3600);
+        const fileName = key.split("/").pop();
+        return { key, fileName, url };
+      })
+    );
+
+    res.json({ ok: true, files });
   } catch (err) {
     next(err);
   }

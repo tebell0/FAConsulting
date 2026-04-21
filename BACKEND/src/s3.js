@@ -17,6 +17,8 @@
  *     → string presigned GET URL
  *   deleteS3Object(key)
  *     → void
+ *   listObjects(prefix)
+ *     → string[] — array of S3 keys matching the prefix
  *   buildFolderUrl(prefix)
  *     → canonical https URL for a folder / prefix (used as the delivery link)
  * ─────────────────────────────────────────────────────────────────
@@ -25,7 +27,7 @@
 import {
   S3Client,
   DeleteObjectCommand,
-  HeadObjectCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
@@ -101,6 +103,42 @@ export async function getSignedDownloadUrl(key, expiresIn = 604800) {
     Key:    key,
   });
   return getSignedUrl(getS3Client(), command, { expiresIn });
+}
+
+// ── List objects by prefix ───────────────────────────────────────
+/**
+ * List all object keys under a given prefix (e.g. "deliverables/jxc-001/").
+ * Returns an array of full S3 keys. Automatically paginates.
+ *
+ * @param {string} prefix
+ * @returns {Promise<string[]>}
+ */
+export async function listObjects(prefix) {
+  const bucket = getBucket();
+  const keys = [];
+  let continuationToken;
+
+  do {
+    const command = new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: prefix,
+      ...(continuationToken ? { ContinuationToken: continuationToken } : {}),
+    });
+    const result = await getS3Client().send(command);
+
+    if (result.Contents) {
+      for (const obj of result.Contents) {
+        // Skip "folder" marker keys (size 0, ends with /)
+        if (obj.Key && obj.Size > 0) {
+          keys.push(obj.Key);
+        }
+      }
+    }
+
+    continuationToken = result.IsTruncated ? result.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return keys;
 }
 
 // ── Delete ────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@
  *   const health   = await api.health()
  *   const gallery  = await api.gallery.list()
  *   const slots    = await api.calendar.list()
+ *   const svcs     = await api.services.list()
  *   await api.contact.submit({ name, email, message, ... })
  *
  *   // Admin (token stored in sessionStorage after sign-in)
@@ -98,6 +99,15 @@ const api = {
    */
   health: () => get('/api/health'),
 
+  // ── Public Services (no auth) ────────────────────────────────
+  services: {
+    /**
+     * GET /api/services
+     * @returns {{ ok: boolean, services: object[] }}
+     */
+    list: () => get('/api/services'),
+  },
+
   // ── Gallery ──────────────────────────────────────────────────
   gallery: {
     /**
@@ -125,6 +135,18 @@ const api = {
     submit: (payload) => post('/api/contact', payload),
   },
 
+  // ── Public Delivery (client views their photos) ──────────────
+  delivery: {
+    /**
+     * GET /api/delivery/:id
+     * Returns presigned download URLs for all files in the appointment's
+     * S3 delivery folder. No admin auth required.
+     * @param {string} appointmentId
+     * @returns {{ ok, client, package, files: { key, fileName, url }[] }}
+     */
+    get: (appointmentId) => get(`/api/delivery/${encodeURIComponent(appointmentId)}`),
+  },
+
   // ── Admin ────────────────────────────────────────────────────
   admin: {
     /**
@@ -136,6 +158,7 @@ const api = {
     signIn: async (credentials) => {
       const data = await post('/api/admin/signin', credentials)
       if (data?.token) setAdminToken(data.token)
+      if (data?.user?.username) sessionStorage.setItem('adminUser', data.user.username)
       return data
     },
 
@@ -145,7 +168,16 @@ const api = {
     signOut: () => {
       clearAdminToken()
       sessionStorage.removeItem('adminAuth')
+      sessionStorage.removeItem('adminUser')
     },
+
+    /**
+     * POST /api/admin/change-password
+     * Verifies current password via bcrypt, hashes the new one, updates DB.
+     * @param {{ username: string, currentPassword: string, newPassword: string }} payload
+     * @returns {{ ok: boolean, message: string }}
+     */
+    changePassword: (payload) => post('/api/admin/change-password', payload),
 
     /** GET /api/admin/dash — stats + appointments + messages */
     dash: () => get('/api/admin/dash'),
@@ -187,7 +219,7 @@ const api = {
      * POST /api/admin/upload-url
      * Ask the backend for a presigned S3 PUT URL for one file.
      * @param {{ appointmentId: string, fileName: string, contentType: string }} payload
-     * @returns {{ ok, uploadUrl, key, publicUrl, folderUrl }}
+     * @returns {{ ok, uploadUrl, key, publicUrl, folderUrl, deliveryPageUrl }}
      */
     getUploadUrl: (payload) => post('/api/admin/upload-url', payload),
 
@@ -198,6 +230,14 @@ const api = {
      * @returns {{ ok, url }}
      */
     getDownloadUrl: (key) => get(`/api/admin/download-url?key=${encodeURIComponent(key)}`),
+
+    /**
+     * GET /api/admin/delivery-files/:appointmentId
+     * List all uploaded files for a delivery and get presigned download URLs.
+     * @param {string} appointmentId
+     * @returns {{ ok, files: { key, fileName, url }[] }}
+     */
+    getDeliveryFiles: (appointmentId) => get(`/api/admin/delivery-files/${encodeURIComponent(appointmentId)}`),
 
     /**
      * DELETE /api/admin/s3-object

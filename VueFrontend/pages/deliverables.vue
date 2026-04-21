@@ -109,7 +109,7 @@
               type="text"
               class="link-input"
               v-model="secureLink"
-              placeholder="Upload files above — link auto-generates"
+              placeholder="Click Generate to create link"
               readonly
               @mouseenter="isHovering=true" @mouseleave="isHovering=false"
             />
@@ -123,10 +123,8 @@
 
           <div style="margin-top:0.8rem;">
             <button class="btn-back" style="font-size:0.65rem;padding:0.65rem 1.4rem;" @click="generateLink"
-              :disabled="!folderUrl"
-              :title="folderUrl ? 'Use S3 delivery link' : 'Upload files first to generate link'"
               @mouseenter="isHovering=true" @mouseleave="isHovering=false">
-              {{ folderUrl ? 'Use Upload Link' : 'Upload Files First' }}
+              Generate Link
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1v4l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.3"/></svg>
             </button>
           </div>
@@ -186,10 +184,13 @@
             <div class="dlv-summary-row">
               <span class="dlv-summary-key">Secure link</span>
               <span class="dlv-summary-val" :class="secureLink ? 'status-ok' : 'status-warn'">
-                {{ secureLink ? 'Generated ✓' : 'Generated after upload' }}
+                {{ secureLink ? 'Generated ✓' : 'Not generated' }}
               </span>
             </div>
-
+            <div class="dlv-summary-row">
+              <span class="dlv-summary-key">Payment</span>
+              <span class="dlv-summary-val status-ok">Confirmed</span>
+            </div>
           </div>
 
           <!-- Send button -->
@@ -295,6 +296,7 @@ function syncSummary() {
   secureLink.value = ''
   uploadedKeys.value = []
   folderUrl.value  = ''
+  deliveryUrl.value = ''
 }
 
 function onClientChange() { syncSummary() }
@@ -349,16 +351,41 @@ const linkPassword = ref('')
 
 // S3 tracking
 const uploadedKeys = ref([])   // S3 keys of successfully uploaded files
-const folderUrl    = ref('')   // S3 folder URL set after first upload
+const folderUrl    = ref('')   // S3 folder URL (internal tracking only)
+const deliveryUrl  = ref('')   // Client-facing delivery page URL
+
+/**
+ * Build the client-facing delivery URL.
+ * This URL hits our API endpoint which generates fresh presigned S3 URLs,
+ * so the client never sees raw S3 links (which would 403 on a private bucket).
+ */
+function buildDeliveryLink(apptId) {
+  // Use the current site origin + our delivery page route
+  const origin = window.location.origin
+  return `${origin}/delivery/${encodeURIComponent(apptId)}`
+}
 
 function generateLink() {
-  // Only use the real S3 folder URL set after upload
-  if (folderUrl.value) {
-    secureLink.value = folderUrl.value
+  if (!selectedApptId.value) {
+    alert('Please select a client appointment first.')
     return
   }
-  // No files uploaded yet — prompt admin to upload first
-  alert('Please upload files first. The secure link is generated automatically after upload completes.')
+
+  // If files were already uploaded, use the delivery page URL we built during upload
+  if (deliveryUrl.value) {
+    secureLink.value = deliveryUrl.value
+    return
+  }
+
+  // Build a delivery page link for the selected appointment
+  secureLink.value = buildDeliveryLink(selectedApptId.value)
+  deliveryUrl.value = secureLink.value
+
+  if (!linkExpiry.value) {
+    const d = new Date()
+    d.setDate(d.getDate() + 30)
+    linkExpiry.value = d.toISOString().split('T')[0]
+  }
 }
 
 function copyLink() {
@@ -377,7 +404,7 @@ const uploadVisible  = ref(false)
 const uploadPct      = ref(0)
 const uploadStatus   = ref('')   // status label shown above the bar
 const sent           = ref(false)
-const sendDisabled   = computed(() => !selectedFiles.value.length || sent.value || uploading.value)
+const sendDisabled   = computed(() => !secureLink.value || sent.value || uploading.value)
 const uploading      = ref(false)
 
 /**
@@ -403,12 +430,12 @@ function uploadFileToS3(uploadUrl, file, onProgress) {
 }
 
 async function sendPackage() {
-  if (!selectedApptId.value) {
-    alert('Please select a client appointment.')
+  if (!secureLink.value) {
+    alert('Please generate a secure link before sending.')
     return
   }
-  if (!selectedFiles.value.length) {
-    alert('Please add at least one file to upload.')
+  if (!selectedApptId.value) {
+    alert('Please select a client appointment.')
     return
   }
 
@@ -432,15 +459,20 @@ async function sendPackage() {
         uploadStatus.value = `Uploading ${i + 1} of ${files.length}: ${file.name}`
 
         // Get a presigned URL from the backend
-        const { uploadUrl, key, folderUrl: fUrl } = await api.admin.getUploadUrl({
+        const { uploadUrl, key, folderUrl: fUrl, deliveryPageUrl } = await api.admin.getUploadUrl({
           appointmentId: selectedApptId.value,
           fileName:      file.name,
           contentType:   file.type || 'application/octet-stream',
         })
 
-        // Track the folder URL from the first file (used as fallback)
+        // Track the folder URL from the first file (internal only)
         if (!folderUrl.value && fUrl) {
           folderUrl.value = fUrl
+        }
+        // Build client-facing delivery link using our delivery page
+        if (!deliveryUrl.value) {
+          deliveryUrl.value = buildDeliveryLink(selectedApptId.value)
+          secureLink.value  = deliveryUrl.value
         }
 
         const fileBytes = file.size
@@ -456,21 +488,6 @@ async function sendPackage() {
       }
 
       uploadPct.value    = 100
-      uploadStatus.value = 'Generating secure link…'
-
-      // Generate a presigned GET URL for the first uploaded file
-      // This gives the client a real, working link they can open directly
-      try {
-        const firstKey = uploadedKeys.value[0]
-        const { url } = await api.admin.getDownloadUrl(firstKey)
-        secureLink.value = url
-        folderUrl.value  = url  // keep folderUrl in sync so button stays active
-      } catch (e) {
-        // Fallback to folder URL if download URL generation fails
-        secureLink.value = folderUrl.value
-        console.warn('Could not generate presigned GET URL, using folder URL:', e.message)
-      }
-
       uploadStatus.value = 'Saving delivery link…'
     } else {
       // No files — just record the manual link

@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────
  * Vue Router route table for JayxCreatez Productions.
  *
- * Public routes  →  /  /gallery  /calendar  /contact
+ * Public routes  →  /  /gallery  /calendar  /contact  /delivery/:id
  * Admin routes   →  /adminsignin  /admindash  /deliverables  /adminsettings
  *
  * Admin guard: any /admin* route redirects to /adminsignin when
@@ -19,6 +19,7 @@ const Homepage      = () => import('../pages/homepage.vue')
 const Gallery       = () => import('../pages/gallery.vue')
 const Calendar      = () => import('../pages/calendar.vue')
 const Contact       = () => import('../pages/contact.vue')
+const Delivery      = () => import('../pages/delivery.vue')
 const AdminSignIn   = () => import('../pages/adminsignin.vue')
 const AdminDash     = () => import('../pages/admindash.vue')
 const Deliverables  = () => import('../pages/deliverables.vue')
@@ -31,6 +32,7 @@ const routes = [
   { path: '/gallery',       component: Gallery,       meta: { title: 'Gallery · JayxCreatez'           } },
   { path: '/calendar',      component: Calendar,      meta: { title: 'Book a Session · JayxCreatez'    } },
   { path: '/contact',       component: Contact,       meta: { title: 'Contact · JayxCreatez'           } },
+  { path: '/delivery/:id',  component: Delivery,      meta: { title: 'Your Gallery · JayxCreatez'      } },
 
   // Admin
   { path: '/adminsignin',   component: AdminSignIn,   meta: { title: 'Admin Sign In · JayxCreatez'     } },
