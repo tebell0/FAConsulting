@@ -189,8 +189,8 @@ const api = {
     /** GET /api/admin/deliverables */
     deliverables: () => get('/api/admin/deliverables'),
 
-    /** PUT /api/admin/deliverables/:id/link */
-    setDeliveryLink: (id, link, password = '') => put(`/api/admin/deliverables/${id}/link`, { link, password: password || null }),
+    /** PUT /api/admin/deliverables/:id/link — generates a secure delivery token + link */
+    setDeliveryLink: (id, password = '') => put(`/api/admin/deliverables/${id}/link`, { password: password || null }),
 
     /** GET /api/admin/services */
     getServices: () => get('/api/admin/services'),

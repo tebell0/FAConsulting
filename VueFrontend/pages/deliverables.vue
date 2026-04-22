@@ -350,37 +350,15 @@ const folderUrl    = ref('')   // S3 folder URL (internal tracking only)
 const deliveryUrl  = ref('')   // Client-facing delivery page URL
 
 /**
- * Build the client-facing delivery URL.
- * This URL hits our API endpoint which generates fresh presigned S3 URLs,
- * so the client never sees raw S3 links (which would 403 on a private bucket).
+ * Delivery links are now generated server-side with a random token.
+ * The secureLink is set after the server responds in sendPackage().
  */
-function buildDeliveryLink(apptId) {
-  // Use the current site origin + our delivery page route
-  const origin = window.location.origin
-  return `${origin}/delivery/${encodeURIComponent(apptId)}`
-}
 
 function generateLink() {
-  if (!selectedApptId.value) {
-    alert('Please select a client appointment first.')
-    return
-  }
-
-  // If files were already uploaded, use the delivery page URL we built during upload
-  if (deliveryUrl.value) {
-    secureLink.value = deliveryUrl.value
-    return
-  }
-
-  // Build a delivery page link for the selected appointment
-  secureLink.value = buildDeliveryLink(selectedApptId.value)
-  deliveryUrl.value = secureLink.value
-
-  if (!linkExpiry.value) {
-    const d = new Date()
-    d.setDate(d.getDate() + 30)
-    linkExpiry.value = d.toISOString().split('T')[0]
-  }
+  // Link is now generated server-side after upload.
+  // This function is kept as a no-op for backward compatibility.
+  if (secureLink.value) return
+  alert('Click "Upload & Send to Client" to generate a secure link.')
 }
 
 function copyLink() {
@@ -434,11 +412,7 @@ async function sendPackage() {
     return
   }
 
-  // Auto-generate the delivery link if not already done
-  if (!secureLink.value) {
-    secureLink.value  = buildDeliveryLink(selectedApptId.value)
-    deliveryUrl.value = secureLink.value
-  }
+  // Secure link will be generated server-side after upload completes
 
   uploading.value     = true
   uploadVisible.value = true
@@ -470,11 +444,6 @@ async function sendPackage() {
         if (!folderUrl.value && fUrl) {
           folderUrl.value = fUrl
         }
-        // Build client-facing delivery link using our delivery page
-        if (!deliveryUrl.value) {
-          deliveryUrl.value = buildDeliveryLink(selectedApptId.value)
-          secureLink.value  = deliveryUrl.value
-        }
 
         const fileBytes = file.size
         await uploadFileToS3(uploadUrl, file, (filePct) => {
@@ -497,7 +466,12 @@ async function sendPackage() {
     }
 
     // ── Persist the delivery link + optional password in the DB ──
-    await api.admin.setDeliveryLink(selectedApptId.value, secureLink.value, linkPassword.value || '')
+    // Server generates a random delivery_token and returns the full secure link
+    const deliveryResult = await api.admin.setDeliveryLink(selectedApptId.value, linkPassword.value || '')
+    if (deliveryResult?.link) {
+      secureLink.value  = deliveryResult.link
+      deliveryUrl.value = deliveryResult.link
+    }
 
     uploadPct.value    = 100
     uploadStatus.value = 'Complete!'

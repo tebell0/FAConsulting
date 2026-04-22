@@ -138,11 +138,11 @@ function isImage(fileName) {
 }
 
 async function loadGallery(password = '') {
-  const appointmentId = route.params.id
-  if (!appointmentId) { error.value = true; loading.value = false; return }
+  const token = route.params.token
+  if (!token) { error.value = true; loading.value = false; return }
 
   try {
-    const data = await api.delivery.get(appointmentId, password)
+    const data = await api.delivery.get(token, password)
 
     if (data?.passwordRequired) {
       needsPassword.value = true

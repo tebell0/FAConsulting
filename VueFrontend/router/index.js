@@ -32,7 +32,7 @@ const routes = [
   { path: '/gallery',       component: Gallery,       meta: { title: 'Gallery · JayxCreatez'           } },
   { path: '/calendar',      component: Calendar,      meta: { title: 'Book a Session · JayxCreatez'    } },
   { path: '/contact',       component: Contact,       meta: { title: 'Contact · JayxCreatez'           } },
-  { path: '/delivery/:id',  component: Delivery,      meta: { title: 'Your Gallery · JayxCreatez'      } },
+  { path: '/delivery/:token',  component: Delivery,      meta: { title: 'Your Gallery · JayxCreatez'      } },
 
   // Admin
   { path: '/adminsignin',   component: AdminSignIn,   meta: { title: 'Admin Sign In · JayxCreatez'     } },

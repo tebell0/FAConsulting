@@ -7,6 +7,7 @@
 
 import { Router } from "express";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { testDatabaseConnection, getPool } from "../db.js";
 import {
   getAppointments, getUpcomingAppointments, createAppointment,
@@ -105,17 +106,16 @@ router.post("/contact", async (req, res, next) => {
 
 // ══════════════════════════════════════════════════════════════════
 //  PUBLIC DELIVERY PAGE — client views their delivered photos
-//  GET /api/delivery/:id
-//  Returns presigned GET URLs for every file in the appointment's
-//  S3 delivery folder. No admin auth needed — the appointment id
-//  (e.g. "jxc-2026-4821") acts as a bearer token.
+//  GET /api/delivery/:token
+//  Looks up by delivery_token (random 48-char hex), NOT appointment ID.
+//  This prevents sequential guessing of delivery links.
 // ══════════════════════════════════════════════════════════════════
-router.get("/delivery/:id", async (req, res, next) => {
+router.get("/delivery/:token", async (req, res, next) => {
   try {
     const pool = getPool();
     const [rows] = await pool.query(
-      "SELECT id, name, package, delivery_link, delivery_password FROM appointments WHERE id = ? LIMIT 1",
-      [req.params.id]
+      "SELECT id, name, package, delivery_link, delivery_password, delivery_token FROM appointments WHERE delivery_token = ? LIMIT 1",
+      [req.params.token]
     );
     const appt = rows[0];
     if (!appt || !appt.delivery_link) {
@@ -134,7 +134,7 @@ router.get("/delivery/:id", async (req, res, next) => {
       }
     }
 
-    // List all objects under this appointment's delivery prefix
+    // List all objects under this appointment's delivery prefix (uses real appt id)
     const prefix = buildDeliveryPrefix(appt.id);
     const keys   = await listObjects(prefix);
 
@@ -257,10 +257,14 @@ router.get("/admin/deliverables", requireAdmin, async (_req, res, next) => {
 
 router.put("/admin/deliverables/:id/link", requireAdmin, async (req, res, next) => {
   try {
-    const { link, password } = req.body;
-    if (!link) return res.status(400).json({ ok: false, error: "link is required." });
-    await updateDeliveryLink(getPool(), req.params.id, link, password || null);
-    res.json({ ok: true });
+    const { password } = req.body;
+    // Generate a cryptographically random delivery token (48 hex chars)
+    const token = crypto.randomBytes(24).toString("hex");
+    // Build the delivery link using the token (not the appointment ID)
+    const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || `http://${req.headers.host}`;
+    const link = `${origin}/delivery/${token}`;
+    await updateDeliveryLink(getPool(), req.params.id, link, password || null, token);
+    res.json({ ok: true, token, link });
   } catch (err) {
     next(err);
   }

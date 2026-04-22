@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS appointments (
   ref           VARCHAR(20)   NOT NULL DEFAULT '',
   delivery_link     VARCHAR(255)  DEFAULT NULL,
   delivery_password VARCHAR(100)  DEFAULT NULL,
+  delivery_token    VARCHAR(64)   DEFAULT NULL,
   created_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_status   (status),
   INDEX idx_iso_date (iso_date)
