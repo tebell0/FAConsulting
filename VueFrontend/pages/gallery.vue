@@ -17,11 +17,11 @@
       <h1 class="hero-title">The <em>Gallery</em></h1>
       <div class="hero-meta">
         <div class="hero-meta-item">
-          <span class="hero-meta-num">{{ visibleCount }}</span>
+          <span class="hero-meta-num">{{ photos.length }}</span>
           <span class="hero-meta-label">Images</span>
         </div>
         <div class="hero-meta-item">
-          <span class="hero-meta-num">3</span>
+          <span class="hero-meta-num">{{ filterTabs.length - 1 }}</span>
           <span class="hero-meta-label">Categories</span>
         </div>
         <div class="hero-meta-item">
@@ -217,15 +217,17 @@ const photos = PHOTOS
 // ── Featured & Grid Item Definitions ─────────────────────
 const featuredItems = [
   { idx: 2, src: IMG.IMG_4047, alt: 'Golden Hour Graduation', num: '01', tag: 'Graduation · 2023',   title: 'Golden Hour —<br>Class of 2023', filter: 'graduation' },
-  { idx: 4, src: IMG.IMG_4049, alt: 'Suited Up',              num: '02', tag: 'Lifestyle · Portrait', title: 'Suited Up',                      filter: 'lifestyle'  },
+  { idx: 7, src: IMG.IMG_4086, alt: 'UH Grad on the Bench',   num: '02', tag: 'Graduation',          title: 'UH Grad on<br>the Bench',        filter: 'graduation' },
 ]
 
 const gridItems = [
-  { idx: 1, src: IMG.IMG_4046, alt: 'Written in History', cat: 'Portrait · Editorial', title: 'Written in History', filter: 'portrait'                                        },
-  { idx: 3, src: IMG.IMG_4048, alt: 'City Standards',     cat: 'Portrait · Lifestyle', title: 'City Standards',     filter: 'portrait'                                        },
-  { idx: 0, src: IMG.IMG_4045, alt: 'The Final Chapter',  cat: 'Graduation',           title: 'The Final Chapter',  filter: 'graduation'                                      },
-  { idx: 2, src: IMG.IMG_4047, alt: 'Golden Hour',        cat: 'Graduation · 2023',    title: 'Golden Hour',        filter: 'graduation', imgStyle: 'object-position: top'   },
-  { idx: 4, src: IMG.IMG_4049, alt: 'Suited Up',          cat: 'Lifestyle',            title: 'Suited Up',          filter: 'lifestyle'                                       },
+  { idx: 1, src: IMG.IMG_4046, alt: 'Written in History', cat: 'Portrait · Editorial', title: 'Written in History', filter: 'portrait' },
+  { idx: 5, src: IMG.IMG_4084, alt: 'Game Day Locker Room', cat: 'Sports', title: 'Game Day Locker Room', filter: 'sports' },
+  { idx: 0, src: IMG.IMG_4045, alt: 'The Final Chapter',  cat: 'Graduation',           title: 'The Final Chapter',  filter: 'graduation' },
+  { idx: 6, src: IMG.IMG_4085, alt: "Rider's Edge",       cat: 'Portrait · Editorial', title: "Rider's Edge",       filter: 'portrait' },
+  { idx: 3, src: IMG.IMG_4048, alt: 'City Standards',     cat: 'Portrait · Lifestyle', title: 'City Standards',     filter: 'portrait' },
+  { idx: 4, src: IMG.IMG_4049, alt: 'Suited Up',          cat: 'Lifestyle',            title: 'Suited Up',          filter: 'lifestyle' },
+  { idx: 8, src: IMG.IMG_4087, alt: 'Sigma Night',        cat: 'Graduation · Greek',   title: 'Sigma Night',        filter: 'graduation' },
 ]
 
 // ── Filter ────────────────────────────────────────────────
@@ -234,6 +236,7 @@ const filterTabs = [
   { label: 'Portraits',  value: 'portrait'   },
   { label: 'Graduation', value: 'graduation' },
   { label: 'Lifestyle',  value: 'lifestyle'  },
+  { label: 'Sports',     value: 'sports'     },
 ]
 const activeFilter = ref('all')
 
@@ -361,13 +364,10 @@ body { background: var(--black); color: var(--off-white); font-family: 'DM Sans'
 .grid-label-row { display: flex; align-items: center; gap: 2rem; padding: 3rem 1rem 1.5rem; }
 .grid-label { font-size: 0.6rem; letter-spacing: 0.35em; text-transform: uppercase; color: rgba(200,169,126,0.5); white-space: nowrap; }
 .grid-label-line { flex: 1; height: 1px; background: var(--warm-dim); }
-.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 280px; gap: 3px; }
 .grid-item { position: relative; overflow: hidden; cursor: none; }
-.grid-item:nth-child(1) { grid-column: span 2; aspect-ratio: 16/9; }
-.grid-item:nth-child(2) { aspect-ratio: 3/4; grid-row: span 2; }
-.grid-item:nth-child(3) { aspect-ratio: 4/3; }
-.grid-item:nth-child(4) { aspect-ratio: 1; }
-.grid-item:nth-child(5) { aspect-ratio: 3/4; }
+.grid-item:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+.grid-item:nth-child(4) { grid-row: span 2; }
 .grid-item.filtered-out { opacity: 0.1; pointer-events: none; }
 .grid-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94), filter 0.5s ease; filter: brightness(0.85) saturate(0.9); }
 .grid-item:hover img { transform: scale(1.06); filter: brightness(0.95) saturate(1.0); }
@@ -427,9 +427,9 @@ body { background: var(--black); color: var(--off-white); font-family: 'DM Sans'
   .filter-tab { padding: 1rem; font-size: 0.6rem; }
   .featured-row { grid-template-columns: 1fr; }
   .featured-item:first-child { aspect-ratio: 4/5; }
-  .photo-grid { grid-template-columns: 1fr 1fr; }
-  .grid-item:nth-child(1) { grid-column: span 2; aspect-ratio: 16/10; }
-  .grid-item:nth-child(2) { grid-row: span 1; aspect-ratio: 1; }
+  .photo-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 220px; }
+  .grid-item:nth-child(1) { grid-column: span 2; grid-row: span 1; }
+  .grid-item:nth-child(4) { grid-row: span 1; }
   .cta-strip { flex-direction: column; padding: 3rem 1.5rem; text-align: center; }
   .lb-thumbs { display: none; }
   .lb-inner { padding: 4rem 1rem; }

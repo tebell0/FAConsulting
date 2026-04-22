@@ -65,8 +65,8 @@
   <!-- About -->
   <div class="about-section" id="about">
     <div class="about-img-wrap fade-up">
-      <div class="about-img-main"><img :src="IMG.IMG_4045" alt="Jalen Anthony" /></div>
-      <div class="about-img-accent"><img :src="IMG.IMG_4049" alt="Behind the lens" /></div>
+      <div class="about-img-main"><img :src="IMG.IMG_4086" alt="Jalen Anthony" /></div>
+      <div class="about-img-accent"><img :src="IMG.IMG_4084" alt="Behind the lens" /></div>
       <div class="about-tag">JayxCreatez Productions</div>
     </div>
     <div class="about-text fade-up">
